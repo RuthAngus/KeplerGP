@@ -20,15 +20,17 @@ import numpy as np
 
 def matrifysquare(hyper, x, q):
 
-    n = len(x)-1 # FIXME: take 1 away so I is same size as x
+    n = len(x) 
     sigma = np.exp(hyper[0])
     lambda1 = np.exp(hyper[1])
     h1 = np.exp(hyper[2])
 
     # shift elements of x
-    x2 = x[1:]
-    x = x[:-1]
-    diff = x - x2 # FIXME: is this the right thing to do? sort it out!
+    diff = np.zeros((len(x), len(x)))
+    for i in range(len(x)):
+        for j in range(len(x)):
+            diff[i][j] = i-j # FIXME: is this the right thing to do? sort it out!
+        
 
     if q == 0:
         # covariance matrix

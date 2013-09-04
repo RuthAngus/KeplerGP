@@ -38,6 +38,7 @@ def createToepCov(M,T,C,Y,sv):
         else:
             # k is the first cadence in q2 minus the last in the last cadence array - 1
             k = Ce[0] - Cf[-1] - 1
+            print k
             Cf = np.vstack( (Cf, np.vstack(np.r_[ (Cf[-1] + 1):(Ce[0]) ])) )
 
             N=np.shape(Cf)[0]
@@ -46,7 +47,9 @@ def createToepCov(M,T,C,Y,sv):
             inds2=np.hstack((inds2,N+ind2))
             
             Cf=np.vstack((Cf,Ce))
+            print np.shape(Yf), np.shape(np.zeros((k,1))), np.shape(Ye)
             Yf=np.vstack((Yf,np.zeros((k,1)),Ye))
+            print np.shape(Yf)
         n=n+sv[i];
 
         # mean value
@@ -59,9 +62,11 @@ def createToepCov(M,T,C,Y,sv):
     inds=np.intersect1d(inds1,inds2)
 
     # return Cf,inds,delta,Yf
+    print np.shape(inds), np.shape(Yf)
     return Cf, inds, Yf
 
-def createMatCov(M, T, C, Y, sv, f):
+def createMatCov_ruth(M, T, C, Y, sv, f):
+
 # c,r first column and first row of the covariance matrix
 # inds vector who contain the indice we need for make the multiplication...
     
@@ -73,14 +78,17 @@ def createMatCov(M, T, C, Y, sv, f):
 
     # Cf, inds, delta, Yf = createToepCov(M, T, C, Y, sv)
     Cf, inds, Yf = createToepCov(M, T, C, Y, sv)
-    
+   
     # c = f(Cf, Cf[0], delta)
     # print Cf
     # print Cf[0]
     # print len(Cf), type(Cf), np.shape(Cf)
     # print len(Cf[0]), type(Cf[0]), np.shape(Cf[0])
+    
     c = f(Cf, Cf[0])
+    
     r = c.T
+    
     return c, r, inds, Yf
     
 # for make a multiplication K*x used pdtMatToepVect(c,r,x,inds) 

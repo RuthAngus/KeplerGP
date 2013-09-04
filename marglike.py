@@ -37,8 +37,8 @@ def marglike(hyper, x, y, cadence):
 
     # Calculate derivatives
     dKdsigma = matrifysquare(hyper, x, 1) # Derivative w.r.t. log(sigma)
-    dkdlambda1 = matrifysquare(hyper, x, 2) # Derivative w.r.t. log(lambda1)
-    dkdh1 = matrifysquare(hyper, x, 3) # Derivative w.r.t. log(h1)
+    dKdlambda1 = matrifysquare(hyper, x, 2) # Derivative w.r.t. log(lambda1)
+    dKdh1 = matrifysquare(hyper, x, 3) # Derivative w.r.t. log(h1)
 
     # Here's where I use Sophie's badass code!
     # invKy = K*-1*y
@@ -55,22 +55,23 @@ def marglike(hyper, x, y, cadence):
     C = cadence
     Y = y
     sv = np.array([N1,N2])
-        
     par = hyper
 
-    print np.shape(T), np.shape(C), np.shape(Y)
-    
     #CovFunc = SE( M, T, C, Y, sv, par, False)
-    Cov_c, Cov_r, inds, y = SE(M, T, C, Y, sv, par, True)
-    print type(Cov_c), type(Cov_r), type(y), type(10**(-6)), type(200), type(inds)
-    alpha, flag, ii = pcgToepPadding(Cov_c, Cov_r, y, 10**(-6), 200, inds)
-    raw_input('enter')
+    Cov_c, Cov_r, inds, y = SE(M, T, C, Y, sv, par, False)
+    maxit = 200
+    tolerance = 10**(-6)
+    print np.shape(y), np.shape(inds)
+    y=y[inds,:]
+    alpha, flag, ii = pcgToepPadding(Cov_c, Cov_r, y, tolerance, maxit, inds)
+    
     
     U = np.linalg.cholesky(K)
 
+    n = len(x)
     L = - sum(np.log(np.diag(U))) -0.5 * y * alpha - n*0.5*np.log(2*np.pi)
-    dLdsigma = 0.5 * sum(np.diag(alpha*alpha.T*dkdsigma - (np.linalg.solve(K, dKdsigma)) ))
-    dLdlambda1 = 0.5 * sum(np.diag(alpha*alpha.T*dkdlambda1 - (np.linalg.solve(K, dkdlambda1)) ))
-    dkdh1 = 0.5 * sum(np.diag(alpha*alpha.T*dkdh1 - (np.linalg.solve(K, dkdh1)) ))
+    dLdsigma = 0.5 * sum(np.diag(alpha*alpha.T*dKdsigma - (np.linalg.solve(K, dKdsigma)) ))
+    dLdlambda1 = 0.5 * sum(np.diag(alpha*alpha.T*dKdlambda1 - (np.linalg.solve(K, dKdlambda1)) ))
+    dKdh1 = 0.5 * sum(np.diag(alpha*alpha.T*dKdh1 - (np.linalg.solve(K, dKdh1)) ))
 
-    return -L, [-dldsigma, -dLdlambda1, -dldh1]
+    return -L, [-dKdsigma, -dKdlambda1, -dKdh1]

@@ -51,6 +51,8 @@ def fitGP():
     print 'Minimising NLL...'
     marglike.marglike(hyper, x1, y1, cadence)
 
+    
+
     #--------------------------------------------------------------------
     
     # # Predictive

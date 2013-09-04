@@ -1,8 +1,8 @@
 
 import numpy as np
-from createToepCov_ruth import createMatCov
+from createToepCov import createMatCov
 
-def SE(M,T,C,Y,sv,par,white_noise = False):
+def SE(M, T, C, Y, sv, par, white_noise = False):
 	# input
 	# 	M number of data (here 4)
 	# 	T=[T1,T2...]
@@ -29,7 +29,7 @@ def SE(M,T,C,Y,sv,par,white_noise = False):
     sigma = par[0]
     h1 = par[1]
     lambda1 = par[2]
-    f = lambda i, j: h1**2 * np.exp(-(i-j)**2 / 2.*lambda1**2)
+    f = lambda i, j: h1**2 * np.exp(-(i-j)**2 / 2.*lambda1**2) # FIXME: this is bollocks
     
     c, r, inds, y = createMatCov(M, T, C, Y, sv, f)    
     return c, r, inds, y

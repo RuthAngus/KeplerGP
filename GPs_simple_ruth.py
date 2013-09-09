@@ -21,35 +21,37 @@ def SE(X1, X2, theta, white_noise = False):
         K += (np.identity(X1[:,0].size) * (theta[2]**2))
     return np.matrix(K)
 
-def matrifysquare(hyper, x1, x2, q, white_noise = False):
-    n = len(x1) 
+#def matrifysquare(hyper, x1, x2, q, white_noise = False):
+def matrifysquare(hyper, X1, X2, white_noise = False):
+    n = len(X1) 
     sigma = np.exp(hyper[0])
     lambda1 = np.exp(hyper[1])
     h1 = np.exp(hyper[2])
-    x1 = np.matrix(x1); x2 = np.matrix(x2) # ensure both sets of inputs are matrices
-    diff = sp.distance.cdist(x1, x2, 'sqeuclidean') # calculate squared Euclidean distance
-    if q == 0:
-        # covariance matrix
-        K = h1**2 * np.exp(- diff / (2*(lambda1**2))) + sigma* np.matrix(np.identity(n))
-    elif q == 1:
-        # derivative of K wrt hyper(1) = log(sigma)
-        K = sigma * np.matrix(np.identity(n))
-    elif q == 2:
-        # derivative of K wrt hyper(2) = log(lambda1)
-        K = h1**2 * np.exp( - diff**2 / (2*lambda1**2)) * (diff**2/(lambda1**2))
-    elif q == 3:
-        # derivative of K wrt hyper(3) = log(h1)
-        K = 2* h1**2 * np.exp( - diff **2 / (2*lambda1**2))
+    x1 = np.matrix(X1); X2 = np.matrix(X2) # ensure both sets of inputs are matrices
+    diff = sp.distance.cdist(X1, X2, 'sqeuclidean') # calculate squared Euclidean distance
+    # if q == 0:
+    #     # covariance matrix
+    #     K = h1**2 * np.exp(- diff / (2*(lambda1**2))) + sigma* np.matrix(np.identity(n))
+    # elif q == 1:
+    #     # derivative of K wrt hyper(1) = log(sigma)
+    #     K = sigma * np.matrix(np.identity(n))
+    # elif q == 2:
+    #     # derivative of K wrt hyper(2) = log(lambda1)
+    #     K = h1**2 * np.exp( - diff**2 / (2*lambda1**2)) * (diff**2/(lambda1**2))
+    # elif q == 3:
+    #     # derivative of K wrt hyper(3) = log(h1)
+    #     K = 2* h1**2 * np.exp( - diff **2 / (2*lambda1**2))
+    K = h1**2 * np.exp(- diff / (2*(lambda1**2))) + sigma* np.matrix(np.identity(n))
     return K
 
-def matrify(x1, x2, hyper, white_noise = False):
-    lambda1 = np.exp(hyper[1])
-    h1 = np.exp(hyper[2])
-    x1 = np.matrix(x1); x2 = np.matrix(x2) # ensure both sets of inputs are matrices
-    diff = sp.distance.cdist(x1, x2, 'sqeuclidean') # calculate squared Euclidean distance
+def matrify(X1, X2, hyper, white_noise = False):
+    lambda1 = np.exp(hyper[0])
+    h1 = np.exp(hyper[1])
+    X1 = np.matrix(X1); X2 = np.matrix(X2) # ensure both sets of inputs are matrices
+    diff = sp.distance.cdist(X1, X2, 'sqeuclidean') # calculate squared Euclidean distance
     K = h1**2 * np.exp(- diff / (2*(lambda1**2)))
     if white_noise == True: # add white noise
-        K += (np.identity(X1[:,0].size) * (theta[2]**2))
+        K += (np.identity(X1[:,0].size) * (hyper[2]**2))
     return K
 
 def marglike(x, y, hyper, white_noise = False): # FIXME: build optional white noise into this kernel
@@ -59,9 +61,9 @@ def marglike(x, y, hyper, white_noise = False): # FIXME: build optional white no
     K = 0.5* ( K + K.T) # Forces K to be perfectly symmetric
 
     # Calculate derivatives
-    dKdsigma = matrifysquare(hyper, x, 1) # Derivative w.r.t. log(sigma)
-    dKdlambda1 = matrifysquare(hyper, x, 2) # Derivative w.r.t. log(lambda1)
-    dKdh1 = matrifysquare(hyper, x, 3) # Derivative w.r.t. log(h1)
+    # dKdsigma = matrifysquare(hyper, x, 1) # Derivative w.r.t. log(sigma)
+    # dKdlambda1 = matrifysquare(hyper, x, 2) # Derivative w.r.t. log(lambda1)
+    # dKdh1 = matrifysquare(hyper, x, 3) # Derivative w.r.t. log(h1)
 
     sign, logdetK = np.linalg.slogdet(K)
     
@@ -96,17 +98,6 @@ def NLL_GP(par, X, y, CovFunc):
     return -np.array(logL).flatten()
 
 def PrecD_GP(Xs, X, y, CovFunc, par, WhiteNoise = True, ReturnCov = False):
-    '''
-    Evaluate mean and covariance (if ReturnCov is True) or standard
-    deviation (if ReturnCov is False) of predictive distribution of GP
-    for a set of test inputs Xs, given observed inputs X and outputs
-    y, covariance function CovFunc and covariance parameters par.
-    The WhiteNoise parameter controls whether the white noise term is
-    included when evaluating the variance of the predictive
-    distribution.
-    Currently, the inverse of the covariance matrix is evaluated using
-    the numpy linalg.inv function.
-    '''
     # evaluate covariance matrices
     K = CovFunc(X, X, par, white_noise = True) # training points
     Kss = CovFunc(Xs, Xs, par, white_noise = WhiteNoise) # test points
@@ -124,7 +115,7 @@ def PrecD_GP(Xs, X, y, CovFunc, par, WhiteNoise = True, ReturnCov = False):
     else: # just standard deviation
         return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))
 
-
+# load data
 time, flux, cadence = load_data.load('012317678', quarter = 3)   
 x = time[0:100]
 y = flux[0:100]
@@ -136,18 +127,19 @@ xp = np.r_[ x[0] : x[-1] : 200j ]
 Xp = np.matrix([xp]).T  
 
 # CovFunc = SE
-CovFunc1 = matrifysquare
-CovFunc2 = matrify
-# par_init = [1.,3,0.3]
-par_init = np.log([0.7**2, 600., 2.]) # same as Dona's
+CovFunc = matrify
+# CovFunc1 = matrifysquare
+# CovFunc2 = matrify
+par_init = [1.,3,0.3]
+# par_init = np.log([0.7**2, 600., 2.]) # same as Dona's
 
-yp, yp_err = PrecD_GP(Xp, X, y, CovFunc, par_init)
+mu, sigma = PrecD_GP(Xp, X, y, CovFunc, par_init)
    
 print "Initial covariance parameters: ", par_init,
-print "Initial NLL: ", NLL_GP(par_init,X,y,CovFunc),
-par = so.fmin(NLL_GP, par_init, (X,y,CovFunc))
+print "Initial NLL: ", NLL_GP(par_init, X, y, CovFunc),
+par = so.fmin(NLL_GP, par_init, (X, y, CovFunc))
 print "Maximum likelihood covariance parameters: ", par
-print "Final NLL: ", NLL_GP(par,X,y,CovFunc)
+print "Final NLL: ", NLL_GP(par, X, y, CovFunc)
 
 # evaluate predictive mean and standard deviation for the optimized parameters
 yp, yp_err = PrecD_GP(Xp, X, y, CovFunc, par)

@@ -8,12 +8,15 @@ import emcee
 import triangle
 
 # quasi-periodic covariance kernel
-def QP(X, y, theta, white_noise = False):
-    D = sp.distance.cdist(X,y, "sqeuclidean")
-    Dscaled = np.pi * D * theta[1]
-    K = theta[0]**2*np.exp(-np.sin(Dscaled)**2/(2*(theta[2]**2))-(D**2/(2*theta[3]**2)))
+# def QP(X, y, theta, white_noise = False):
+def QP(X1, X2, theta, white_noise = False):
+    D = sp.distance.cdist(X1,X2, "sqeuclidean")
+#     Dscaled = np.pi * D * theta[1]
+#     K = theta[0]**2*np.exp(-np.sin(Dscaled)**2/(2*(theta[2]**2))-(D**2/(2*theta[3]**2)))
+    K = theta[0]**2*np.exp(-D**2/(2*theta[1]**2) - 2*np.sin(np.pi*D)**2/theta[2]**2)
     if white_noise == True:
-        K += (np.identity(X[:,0].size) * (theta[4]**2))
+#         K += (np.identity(X[:,0].size) * (theta[4]**2))
+        K += (np.identity(X[:,0].size) * (theta[3]**2))
     return np.matrix(K)
 
 # squared exponential covariance kernel
@@ -46,7 +49,7 @@ yerr = tbdata["PDCSAP_FLUX_ERR"]
 
 # remove nans
 n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)
-l = 100
+l = 50
 x = x[n][:l]
 y = y[n][:l]
 yerr = yerr[n][:l]
@@ -78,7 +81,10 @@ Xs = np.matrix([xs]).T  # convert inputs to matrix form (Q x D)
 # theta[3] - length scale of multiplicative sq exp
 # theta[4] - white noise standard deviation if white_noise=True
 
-h_init = [.3,.5,.3,.3,0.3]
+# hyperparams:
+# amplitude, squared exp length-scale (decay), period, white noise
+# h_init = [.3,.5,.3,.3,0.3]
+h_init = [100.,.05,2.,.3]
 covfunc = QP
 
 def lnlike(h, X, y, covfunc):
@@ -87,14 +93,21 @@ def lnlike(h, X, y, covfunc):
     sign, logdetK = np.linalg.slogdet(K)
     logL = -0.5 * y.T *  np.mat(la.lu_solve(la.lu_factor(K),y)) \
         - 0.5 * logdetK - (y.size/2.) * np.log(2*np.pi)
-    return -np.array(logL).flatten()
+    return np.array(logL).flatten()
 
-# Gaussian priors
+# # Gaussian priors
+# def lnprior(h):
+# #     return -.5*(h[0]+.2)**2 -.5*(h[1]+.2)**2 -.5*(h[2]+.2)**2 \
+# #             -.5*(h[3]+.2)*2 -.5*(h[4]+.2)*2
+# #     return -.5*(h[0]+.01)**2 -.5*(h[1]+.01)**2 -.5*(h[2]+.01)**2
+#     return -.5*(h[0]+50.)**2 -.5*(h[1]+1.)**2 -.5*(h[2]+.5)**2 \
+#             -.5*(h[3]+.5)*2
+
+# uniform priors
 def lnprior(h):
-#     return -.5*(h[0]+.2)**2 -.5*(h[1]+.2)**2 -.5*(h[2]+.2)**2 -.5*(h[3]+.2)**2
-    return -.5*(h[0]+.01)**2 -.5*(h[1]+.01)**2 -.5*(h[2]+.01)**2 \
-            -.5*(h[3]+.01)*2 -.5*(h[4]+.01)*2
-#     return -.5*(h[0]+.01)**2 -.5*(h[1]+.01)**2 -.5*(h[2]+.01)**2
+    if 0.<h[0]<1000. and 0.<h[1]<2. and .5<h[2]<10. and .1<h[3]<1.:
+        return 0.0
+    return -np.inf
 
 # posterior prob
 def lnprob(h, X, y, covfunc):
@@ -104,9 +117,10 @@ def lnprob(h, X, y, covfunc):
     return lp + lnlike(h, X, y, covfunc)
 
 print "Initial parameters = ", h_init
-print "Initial nll = ", lnlike(h_init,X,y,covfunc),"\n"
+print "Initial lnlike = ", lnlike(h_init,X,y,covfunc),"\n"
 
 # compute prediction for initial guess and plot
+print "plotting guess"
 ys, ys_err = predict(Xs, X, y,covfunc, h_init)
 pl.clf()
 pl.plot(x, y, 'k.')
@@ -118,10 +132,10 @@ nwalkers, ndim = 32, len(h_init)
 p0 = [h_init+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (X,y,covfunc))
 print("Burn-in")
-p0, lp, state = sampler.run_mcmc(p0, 1000)
-# sampler.reset()
-# print("Production run")
-# sampler.run_mcmc(p0, 500)
+p0, lp, state = sampler.run_mcmc(p0, 100)
+sampler.reset()
+print("Production run")
+sampler.run_mcmc(p0, 500)
 
 print("Making triangle plot")
 fig_labels = ["$0$", "$1$", "$2$", "$3$", "$4$"]
@@ -146,7 +160,7 @@ mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
 h = np.array(mcmc_result)[:, 0]
 print 'mcmc result', h
 
-print "Final nll = ", lnlike(h, X, y, covfunc),"\n"
+print "Final lnlike = ", lnlike(h, X, y, covfunc),"\n"
 ys, ys_err = predict(Xs, X, y, covfunc, h)
 
 # plot

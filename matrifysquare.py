@@ -20,37 +20,22 @@ import numpy as np
 import scipy.spatial as sp
 
 def matrifysquare(hyper, x, q):
-
     n = len(x) 
     sigma = np.exp(hyper[0])
     lambda1 = np.exp(hyper[1])
     h1 = np.exp(hyper[2])
-
-    # # shift elements of x
-    # diff = np.zeros((len(x), len(x)))
-    # for i in range(len(x)):
-    #     for j in range(len(x)):
-    #         diff[i][j] = i-j # FIXME: is this the right thing to do? sort it out!
-
     x = np.matrix(x) # ensure both sets of inputs are matrices
     diff = sp.distance.cdist(x, x, 'sqeuclidean') # calculate squared Euclidean distance
-
     if q == 0:
         # covariance matrix
-        # K = h1**2 * np.exp( - (diff**2) / (2*lambda1**2)) + sigma* np.matrix(np.identity(n))
         K = h1**2 * np.exp(- diff / (2*(lambda1**2))) + sigma* np.matrix(np.identity(n))
-        #(white noise)
-
     elif q == 1:
         # derivative of K wrt hyper(1) = log(sigma)
         K = sigma * np.matrix(np.identity(n))
-
     elif q == 2:
         # derivative of K wrt hyper(2) = log(lambda1)
         K = h1**2 * np.exp( - diff**2 / (2*lambda1**2)) * (diff**2/(lambda1**2))
-
     elif q == 3:
         # derivative of K wrt hyper(3) = log(h1)
         K = 2* h1**2 * np.exp( - diff **2 / (2*lambda1**2))
-
     return K

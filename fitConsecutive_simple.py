@@ -4,7 +4,7 @@ import numpy as np
 import pylab
 import load_data
 import GaussianProcesses as GP
-
+# import Toeplitz_matrix_code as Tmc
 
 def fitGP(time, flux):
 
@@ -32,21 +32,22 @@ def fitGP(time, flux):
     #set the hyperparameters
     MyGP.set_attributes(hyperparams=[1.,0.5,0.4])
 
-    #get values for the predictive distribution *conditioned* on the observed data
-    f_pred, f_pred_err = MyGP.predict(X_pred,WhiteNoise=False)
+    # #get values for the predictive distribution *conditioned* on the observed data
+    # f_pred, f_pred_err = MyGP.predict(X_pred,WhiteNoise=False)
 
-    #plot the data and regression
-    GP.PlotData(x1,f,MyGP.hyperparams[-1])
-    GP.PlotRanges(x1_pred,f_pred,f_pred_err,title="Initial hyperparams")
-    for i in range(5): #plot some random vectors
-        pylab.plot(x1_pred,MyGP.GetRandomVector())
+    # #plot the data and regression
+    # GP.PlotData(x1,f,MyGP.hyperparams[-1])
+    # GP.PlotRanges(x1_pred,f_pred,f_pred_err,title="Initial hyperparams")
+    # for i in range(5): #plot some random vectors
+    #     pylab.plot(x1_pred,MyGP.GetRandomVector())
 
     ##########################################################################################
     #Learning the (hyper)parameters - ie parameters of the covariance matrix
 
     #optimise the hyperparameters instead of fixing them
+    
     MyGP.MaxLikelihood()
-
+    
     pylab.close(3)
     pylab.figure(3)
     f_pred, f_pred_err = MyGP.predict(X_pred,WhiteNoise=False)

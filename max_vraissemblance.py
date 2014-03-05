@@ -92,7 +92,8 @@ def NLL_GP(par, M,T,C,sv, Y, CovFunc):
     y=y[inds,:]
     # get log determinant of K
     print 'calcul determinant'
-    # logdetK = np.log(detToepInc(Cov_c,inds))
+    print np.shape(Cov_c), np.shape(inds)
+    logdetK = np.log(detToepInc(Cov_c,inds))
     
     
     # print 'det calculer', logdetK

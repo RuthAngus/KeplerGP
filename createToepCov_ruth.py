@@ -1,6 +1,5 @@
 #!/Applications/Python3.3
 
-
 import numpy as np
 from numpy.fft import *
 from math import *
@@ -37,8 +36,9 @@ def createToepCov(M,T,C,Y,sv):
             inds2=ind2
         else:
             # k is the first cadence in q2 minus the last in the last cadence array - 1
+            # ie the gap between quarters
+            # Filling in the gap between quarters
             k = Ce[0] - Cf[-1] - 1
-            print k
             Cf = np.vstack( (Cf, np.vstack(np.r_[ (Cf[-1] + 1):(Ce[0]) ])) )
 
             N=np.shape(Cf)[0]
@@ -47,9 +47,7 @@ def createToepCov(M,T,C,Y,sv):
             inds2=np.hstack((inds2,N+ind2))
             
             Cf=np.vstack((Cf,Ce))
-            print np.shape(Yf), np.shape(np.zeros((k,1))), np.shape(Ye)
             Yf=np.vstack((Yf,np.zeros((k,1)),Ye))
-            print np.shape(Yf)
         n=n+sv[i];
 
         # mean value
@@ -62,7 +60,6 @@ def createToepCov(M,T,C,Y,sv):
     inds=np.intersect1d(inds1,inds2)
 
     # return Cf,inds,delta,Yf
-    print np.shape(inds), np.shape(Yf)
     return Cf, inds, Yf
 
 def createMatCov_ruth(M, T, C, Y, sv, f):
@@ -88,7 +85,7 @@ def createMatCov_ruth(M, T, C, Y, sv, f):
     c = f(Cf, Cf[0])
     
     r = c.T
-    
+
     return c, r, inds, Yf
     
 # for make a multiplication K*x used pdtMatToepVect(c,r,x,inds) 

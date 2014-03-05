@@ -1,6 +1,6 @@
 
 import numpy as np
-from createToepCov import createMatCov
+from createToepCov_ruth import createMatCov_ruth
 
 def SE(M, T, C, Y, sv, par, white_noise = False):
 	# input
@@ -30,8 +30,9 @@ def SE(M, T, C, Y, sv, par, white_noise = False):
     h1 = par[1]
     lambda1 = par[2]
     f = lambda i, j: h1**2 * np.exp(-(i-j)**2 / 2.*lambda1**2) # FIXME: this is bollocks
+
+    c, r, inds, y = createMatCov_ruth(M, T, C, Y, sv, f)
     
-    c, r, inds, y = createMatCov(M, T, C, Y, sv, f)    
     return c, r, inds, y
 	# output
 	# 	c, r first row and first column of the covariance matrix

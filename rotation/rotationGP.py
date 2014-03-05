@@ -29,7 +29,7 @@ def SE(X1, X2, theta, white_noise = False):
 
 def predict(Xs, X, y, CovFunc, par, WhiteNoise = True, ReturnCov = False):
     K = CovFunc(X, X, par, white_noise = True) # training points
-    Kss = CovFunc(Xs, Xs, par, white_noise = WhiteNoise) # test points
+    Kss = CovFunc(Xs, Xs, par, white_noise = False) # test points
     Ks = CovFunc(Xs, X, par, white_noise = False) # cross-terms
     Kinv = np.linalg.inv( np.matrix(K) )
     y = np.matrix(np.array(y).flatten()).T
@@ -49,7 +49,7 @@ yerr = tbdata["PDCSAP_FLUX_ERR"]
 
 # remove nans
 n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)
-l = 50
+l = 500
 x = x[n][:l]
 y = y[n][:l]
 yerr = yerr[n][:l]
@@ -61,7 +61,7 @@ y = y[0:-1:subsamp]
 yerr = yerr[0:-1:subsamp]
 
 # test data
-xs = np.r_[min(x)-.5:max(x)+.5:101j]
+xs = np.r_[min(x)-.5:max(x)+.5:201j]
 
 # format data
 y = np.array(y)
@@ -135,7 +135,7 @@ print("Burn-in")
 p0, lp, state = sampler.run_mcmc(p0, 100)
 sampler.reset()
 print("Production run")
-sampler.run_mcmc(p0, 500)
+sampler.run_mcmc(p0, 1000)
 
 print("Making triangle plot")
 fig_labels = ["$0$", "$1$", "$2$", "$3$", "$4$"]

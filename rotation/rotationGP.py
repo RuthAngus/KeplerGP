@@ -7,6 +7,14 @@ import pylab as pl
 import emcee
 import triangle
 
+plotpar = {'axes.labelsize': 16,
+           'text.fontsize': 16,
+           'legend.fontsize': 14,
+           'xtick.labelsize': 17,
+           'ytick.labelsize': 17,
+           'text.usetex': True}
+pl.rcParams.update(plotpar)
+
 # quasi-periodic covariance kernel
 # def QP(X, y, theta, white_noise = False):
 def QP(X1, X2, theta, white_noise = False):
@@ -29,16 +37,18 @@ def SE(X1, X2, theta, white_noise = False):
 
 def predict(Xs, X, y, CovFunc, par, WhiteNoise = True, ReturnCov = False):
     K = CovFunc(X, X, par, white_noise = True) # training points
-    Kss = CovFunc(Xs, Xs, par, white_noise = False) # test points
+    Kss = CovFunc(Xs, Xs, par, white_noise = WhiteNoise) # test points
     Ks = CovFunc(Xs, X, par, white_noise = False) # cross-terms
     Kinv = np.linalg.inv( np.matrix(K) )
     y = np.matrix(np.array(y).flatten()).T
     prec_mean = Ks * Kinv * y
     prec_cov = Kss - Ks * Kinv * Ks.T
+    print np.diag(prec_cov)
     if ReturnCov: # full covariance, or
         return np.array(prec_mean).flatten(), np.array(prec_cov)
     else: # just standard deviation
-        return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))
+#         return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))
+        return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(np.sqrt(prec_cov**2))))
 
 # Load data
 hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
@@ -49,19 +59,24 @@ yerr = tbdata["PDCSAP_FLUX_ERR"]
 
 # remove nans
 n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)
-l = 500
+l = 500.
 x = x[n][:l]
 y = y[n][:l]
 yerr = yerr[n][:l]
 
 # subsample
+xplot = x
+yplot = y
+yplot -= np.mean(y)
+yerrplot = yerr
 subsamp = 5
 x = x[0:-1:subsamp]
 y = y[0:-1:subsamp]
 yerr = yerr[0:-1:subsamp]
 
 # test data
-xs = np.r_[min(x)-.5:max(x)+.5:201j]
+print len(x)
+xs = np.r_[min(x)-.5:max(x)+.5:100j]
 
 # format data
 y = np.array(y)
@@ -84,7 +99,7 @@ Xs = np.matrix([xs]).T  # convert inputs to matrix form (Q x D)
 # hyperparams:
 # amplitude, squared exp length-scale (decay), period, white noise
 # h_init = [.3,.5,.3,.3,0.3]
-h_init = [100.,.05,2.,.3]
+h_init = [100.,.09,2.,.3]
 covfunc = QP
 
 def lnlike(h, X, y, covfunc):
@@ -119,13 +134,33 @@ def lnprob(h, X, y, covfunc):
 print "Initial parameters = ", h_init
 print "Initial lnlike = ", lnlike(h_init,X,y,covfunc),"\n"
 
+# Maximum likelihood optimisation
+# def NLL_GP(h, X, y, covfunc):
+#     y = np.matrix(np.array(y).flatten()).T
+#     K = covfunc(X, X, h, white_noise = True)
+#     sign, logdetK = np.linalg.slogdet(K)
+#     logL = -0.5 * y.T *  np.mat(la.lu_solve(la.lu_factor(K),y)) \
+#         - 0.5 * logdetK - (y.size/2.) * np.log(2*np.pi)
+#     return -np.array(logL).flatten()
+
+# print "Initial NLL: ", NLL_GP(h_init,X,y,covfunc),"\n"
+# par = so.fmin(NLL_GP, h_init, (X,y,covfunc))
+# print "Maximum likelihood covariance parameters: ", par,"\n"
+# print "Final NLL: ", NLL_GP(par,X,y,covfunc),"\n"
+
 # compute prediction for initial guess and plot
 print "plotting guess"
 ys, ys_err = predict(Xs, X, y,covfunc, h_init)
+print ys_err
 pl.clf()
-pl.plot(x, y, 'k.')
-pl.plot(xs, ys, 'b-')
+pl.errorbar(xplot, yplot, color='k', fmt='.', capsize=0, ecolor='.7', zorder=2)
+pl.plot(xs, ys, color = "#339999", zorder=1, linewidth='2')
+pl.plot(xs, ys+ys_err, color = "#339999", zorder=1, linewidth='2',alpha='.1')
+pl.plot(xs, ys-ys_err, color = "#339999", zorder=1, linewidth='2', alpha='.1')
+pl.xlabel("$\mathrm{Time (days)}$")
+pl.ylabel("$\mathrm{Flux}$")
 pl.savefig('guess')
+raw_input('enter')
 
 # Sample the posterior probability for m.
 nwalkers, ndim = 32, len(h_init)

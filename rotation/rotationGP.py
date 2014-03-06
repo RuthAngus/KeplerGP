@@ -16,21 +16,22 @@ plotpar = {'axes.labelsize': 16,
 pl.rcParams.update(plotpar)
 
 # quasi-periodic covariance kernel
-# def QP(X, y, theta, white_noise = False):
 def QP(X1, X2, theta, white_noise = False):
-    D = sp.distance.cdist(X1,X2, "sqeuclidean")
-#     Dscaled = np.pi * D * theta[1]
-#     K = theta[0]**2*np.exp(-np.sin(Dscaled)**2/(2*(theta[2]**2))-(D**2/(2*theta[3]**2)))
-    K = theta[0]**2*np.exp(-D**2/(2*theta[1]**2) - 2*np.sin(np.pi*D)**2/theta[2]**2)
+    D = sp.distance.cdist(X1, X2, "sqeuclidean")
+#     K = theta[0]**2*np.exp(-D**2/(2*theta[1]**2))*np.cos(np.pi*D/theta[2])
+#     K = theta[0]**2*np.exp(-D**2/(2*theta[1]**2))*np.exp(np.cos(np.pi*D/theta[2]))
+#     K = theta[0]**2 * np.exp((-D**2 - np.sin(np.pi*D/theta[2])**2)/(2*theta[1]**2))
+#     K = theta[0]**2 * np.exp((-D - np.sin(np.pi*D/theta[2])**2)/(2*theta[1]**2))
+    Dscaled = np.pi*D/theta[2]
+    K = theta[0]**2 * np.exp(-2*np.sin(Dscaled)**2/(theta[1]**2))
     if white_noise == True:
-#         K += (np.identity(X[:,0].size) * (theta[4]**2))
-        K += (np.identity(X[:,0].size) * (theta[3]**2))
+        K += (np.identity(X1[:,0].size) * (theta[3]**2))
     return np.matrix(K)
 
 # squared exponential covariance kernel
 def SE(X1, X2, theta, white_noise = False):
-    d = sp.distance.cdist(X1, X2, 'sqeuclidean')
-    K = theta[0]**2 * np.exp( - d/(2*(theta[1]**2)))
+    D = sp.distance.cdist(X1, X2, 'sqeuclidean')
+    K = theta[0]**2 * np.exp(-D/(2*(theta[1]**2)))
     if white_noise == True:
         K += (np.identity(X1[:,0].size) * (theta[2]**2))
     return np.matrix(K)
@@ -43,12 +44,10 @@ def predict(Xs, X, y, CovFunc, par, WhiteNoise = True, ReturnCov = False):
     y = np.matrix(np.array(y).flatten()).T
     prec_mean = Ks * Kinv * y
     prec_cov = Kss - Ks * Kinv * Ks.T
-    print np.diag(prec_cov)
     if ReturnCov: # full covariance, or
         return np.array(prec_mean).flatten(), np.array(prec_cov)
     else: # just standard deviation
-#         return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))
-        return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(np.sqrt(prec_cov**2))))
+        return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))
 
 # Load data
 hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
@@ -75,8 +74,7 @@ y = y[0:-1:subsamp]
 yerr = yerr[0:-1:subsamp]
 
 # test data
-print len(x)
-xs = np.r_[min(x)-.5:max(x)+.5:100j]
+xs = np.r_[min(x)-1:max(x)+1:500j]
 
 # format data
 y = np.array(y)
@@ -85,42 +83,32 @@ X = np.matrix([x]).T # convert inputs to matrix form (N x D)
 Xs = np.matrix([xs]).T  # convert inputs to matrix form (Q x D)
 
 # initial hyperparameters (SE)
-# h_init = [1.,3.,0.3]
-# covfunc = SE
-
-# initial hyperparameters (quasi-periodic)
-# Hyperparameters are amplitude frequency, periodic length scale,
-# theta[0] - sqrt maximum covariance parameter - gives 1sigma prior dist size
-# theta[1] - frequency
-# theta[2] - length scale of periodic term
-# theta[3] - length scale of multiplicative sq exp
-# theta[4] - white noise standard deviation if white_noise=True
+h_init = [1000.,.5,.3]
+covfunc = SE
 
 # hyperparams:
 # amplitude, squared exp length-scale (decay), period, white noise
-# h_init = [.3,.5,.3,.3,0.3]
-h_init = [100.,.09,2.,.3]
-covfunc = QP
+# h_init = [10.,.05,2.,.5]
+# h_init = [10.,.5,2.,.3]
+# covfunc = QP
 
 def lnlike(h, X, y, covfunc):
     y = np.matrix(np.array(y).flatten()).T
     K = covfunc(X, X, h, white_noise = True)
     sign, logdetK = np.linalg.slogdet(K)
-    logL = -0.5 * y.T *  np.mat(la.lu_solve(la.lu_factor(K),y)) \
-        - 0.5 * logdetK - (y.size/2.) * np.log(2*np.pi)
+    alpha = np.mat(la.lu_solve(la.lu_factor(K),y))
+    logL = -0.5*y.T * alpha - 0.5*logdetK - (y.size/2.)*np.log(2)
     return np.array(logL).flatten()
 
-# # Gaussian priors
+# # uniform priors (quasi-periodic)
 # def lnprior(h):
-# #     return -.5*(h[0]+.2)**2 -.5*(h[1]+.2)**2 -.5*(h[2]+.2)**2 \
-# #             -.5*(h[3]+.2)*2 -.5*(h[4]+.2)*2
-# #     return -.5*(h[0]+.01)**2 -.5*(h[1]+.01)**2 -.5*(h[2]+.01)**2
-#     return -.5*(h[0]+50.)**2 -.5*(h[1]+1.)**2 -.5*(h[2]+.5)**2 \
-#             -.5*(h[3]+.5)*2
+#     if 0.<h[0]<1000. and 0.<h[1]<1. and 1.<h[2]<4. and 0.<h[3]<1.:
+#         return 0.0
+#     return -np.inf
 
-# uniform priors
+# uniform priors (SE)
 def lnprior(h):
-    if 0.<h[0]<1000. and 0.<h[1]<2. and .5<h[2]<10. and .1<h[3]<1.:
+    if 0.<h[0]<5000. and 0.<h[1]<1. and 0.<h[2]<1.:
         return 0.0
     return -np.inf
 
@@ -134,33 +122,29 @@ def lnprob(h, X, y, covfunc):
 print "Initial parameters = ", h_init
 print "Initial lnlike = ", lnlike(h_init,X,y,covfunc),"\n"
 
-# Maximum likelihood optimisation
-# def NLL_GP(h, X, y, covfunc):
-#     y = np.matrix(np.array(y).flatten()).T
-#     K = covfunc(X, X, h, white_noise = True)
-#     sign, logdetK = np.linalg.slogdet(K)
-#     logL = -0.5 * y.T *  np.mat(la.lu_solve(la.lu_factor(K),y)) \
-#         - 0.5 * logdetK - (y.size/2.) * np.log(2*np.pi)
-#     return -np.array(logL).flatten()
-
-# print "Initial NLL: ", NLL_GP(h_init,X,y,covfunc),"\n"
-# par = so.fmin(NLL_GP, h_init, (X,y,covfunc))
-# print "Maximum likelihood covariance parameters: ", par,"\n"
-# print "Final NLL: ", NLL_GP(par,X,y,covfunc),"\n"
-
 # compute prediction for initial guess and plot
 print "plotting guess"
 ys, ys_err = predict(Xs, X, y,covfunc, h_init)
 print ys_err
 pl.clf()
-pl.errorbar(xplot, yplot, color='k', fmt='.', capsize=0, ecolor='.7', zorder=2)
+pl.errorbar(x, y, color='k', fmt='.', capsize=0, ecolor='.7', zorder=2, alpha=.8)
 pl.plot(xs, ys, color = "#339999", zorder=1, linewidth='2')
-pl.plot(xs, ys+ys_err, color = "#339999", zorder=1, linewidth='2',alpha='.1')
-pl.plot(xs, ys-ys_err, color = "#339999", zorder=1, linewidth='2', alpha='.1')
+# pl.plot(xs, ys+ys_err, color = "#339999", zorder=1, linewidth='2',alpha='.5')
+# pl.plot(xs, ys-ys_err, color = "#339999", zorder=1, linewidth='2', alpha='.5')
 pl.xlabel("$\mathrm{Time (days)}$")
 pl.ylabel("$\mathrm{Flux}$")
+pl.ylim(-7000, 5000)
+pl.xlim(259, 272)
 pl.savefig('guess')
 raw_input('enter')
+
+# # optimize the negative log likelihood wrt the covariance parameters
+# # fmin is Nelder-Mead optimizer
+# print "Initial covariance parameters: ", h_init,"\n"
+# print "Initial NLL: ", lnlike(h_init,X,y,covfunc),"\n"
+# par = so.fmin(lnlike, h_init, (X,y,covfunc))
+# print "Maximum likelihood covariance parameters: ", par,"\n"
+# print "Final NLL: ", lnlike(par,X,y,covfunc),"\n"
 
 # Sample the posterior probability for m.
 nwalkers, ndim = 32, len(h_init)
@@ -173,7 +157,7 @@ print("Production run")
 sampler.run_mcmc(p0, 1000)
 
 print("Making triangle plot")
-fig_labels = ["$0$", "$1$", "$2$", "$3$", "$4$"]
+fig_labels = ["$A$", "$l$", "$P$", "$W$"]
 fig = triangle.corner(sampler.flatchain, truths=h_init, labels=fig_labels[:len(h_init)])
 fig.savefig("triangle.png")
 

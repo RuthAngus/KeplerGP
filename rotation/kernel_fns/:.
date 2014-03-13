@@ -1,0 +1,29 @@
+import numpy as np
+import matplotlib.pyplot as pl
+import scipy.spatial as sp
+
+def cf(X1, X2, theta, wn = False, ktype = 'se'):
+    D = sp.distance.cdist(X1, X2, 'sqeuclidean')
+    print D
+    if ktype == 'se':
+        K = theta[0]*np.exp(-D/(2*theta[1]**2))
+    elif ktype == 'p':
+        K = theta[0] * np.exp(-2*np.sin(np.pi*D/theta[2])**2/theta[1]**2)
+    elif ktype == 'qp':
+        K = theta[0]*np.exp(-D/(2*theta[1]**2) \
+                -2*np.sin(np.pi*D/theta[2])**2/theta[3]**2)
+    if wn == True:
+        K += np.identity(X1[:,0].size)*theta[-1]**2
+    print K
+    return np.matrix(K)
+
+x = np.arange(0, 10., .1)
+X = np.matrix(x).T
+theta = [1., 6., 0.3] #se
+theta = [1., 3., 20., 0.3] # p
+theta = [1., 10., 20., 3., 0.3] # qp
+K = cf(X, X, theta, ktype = 'qp')
+
+pl.clf()
+pl.imshow(K, interpolation = 'nearest', cmap = 'gray')
+pl.savefig('K')

@@ -8,6 +8,7 @@ import scipy.optimize as so
 import pylab as pl
 import emcee
 import triangle
+from scipy.linalg import cho_factor, cho_solve
 
 plotpar = {'axes.labelsize': 16,
            'text.fontsize': 16,
@@ -53,9 +54,6 @@ y = y[n][:l]
 yerr = yerr[n][:l]
 
 # subsample
-xplot = x
-yplot = y/np.mean(y) - 1
-yerrplot = yerr
 subsamp = 5
 x = x[0:-1:subsamp]
 y = y[0:-1:subsamp]
@@ -70,16 +68,19 @@ X = np.matrix([x]).T # convert inputs to matrix form (N x D)
 Xs = np.matrix([xs]).T  # convert inputs to matrix form (Q x D)
 
 # amplitude, squared exp length-scale (decay), period, periodic decay, white noise
-theta = [1.,1.,2.,.4,.3] # quasi-periodic
+theta = [10e-9,1.,2.,.4,.3] # quasi-periodic
 covfunc = cf
 
 def lnlike(h, X, y, covfunc):
-    y = np.matrix(np.array(y).flatten()).T
+#     y = np.matrix(np.array(y).flatten()).T
     K = covfunc(X, X, h, wn = True)
-    sign, logdetK = np.linalg.slogdet(K)
-    alpha = np.mat(la.lu_solve(la.lu_factor(K),y))
-    logL = -0.5*y.T * alpha - 0.5*logdetK - (y.size/2.)*np.log(2)
-    return np.array(logL).flatten()
+#     sign, logdetK = np.linalg.slogdet(K)
+#     alpha = np.mat(la.lu_solve(la.lu_factor(K),y))
+#     logL = -0.5*y.T * alpha - 0.5*logdetK - (y.size/2.)*np.log(2)
+#     return np.array(logL).flatten()
+    factor, flag = cho_factor(K)
+    logdet = np.sum(2*np.log(np.diag(factor)))
+    return -0.5 * (np.dot(y, cho_solve((factor, flag), y)) + logdet + len(x)*np.log(2*np.pi))
 
 # uniform priors (quasi-periodic)
 def lnprior(h):
@@ -101,7 +102,7 @@ print "Initial lnlike = ", lnlike(theta,X,y,covfunc),"\n"
 print "plotting guess"
 ys, ys_err = predict(Xs, X, y,covfunc, theta)
 pl.clf()
-pl.errorbar(xplot, yplot, color='k', fmt='.', capsize=0, ecolor='.7', zorder=2, alpha=.8)
+pl.errorbar(x, y, color='k', fmt='.', capsize=0, ecolor='.7', zorder=2, alpha=.8)
 pl.plot(xs, ys, color = "#339999", zorder=1, linewidth='2')
 pl.xlabel("$\mathrm{Time~(days)}$")
 pl.xlim(259, 272)
@@ -113,14 +114,28 @@ lhs = np.zeros(len(P))
 
 for i in range(len(P)):
     theta[2] = P[i]
-    lhs[i] = 10**lnlike(theta, X, y, covfunc)
+    lhs[i] = lnlike(theta, X, y, covfunc)
 
 pl.clf()
 pl.plot(P, lhs, 'k-')
+pl.xlabel('Period (days)')
+pl.ylabel('lnlike')
 pl.savefig('gridsearch')
 
-print 'max likelihood period = ', P[lhs == max(lhs)]
-print 'likelihood = ', max(lhs)
+mlp = P[lhs == min(lhs)]
+print 'max likelihood period = ', mlp
+print 'log likelihood = ', max(lhs)
+
+# compute prediction for initial guess and plot
+print "plotting max likelihood period"
+theta[2] = mlp
+ys, ys_err = predict(Xs, X, y,covfunc, theta)
+pl.clf()
+pl.errorbar(x, y, color='k', fmt='.', capsize=0, ecolor='.7', zorder=2, alpha=.8)
+pl.plot(xs, ys, color = "#339999", zorder=1, linewidth='2')
+pl.xlabel("$\mathrm{Time~(days)}$")
+pl.xlim(259, 272)
+pl.savefig('maxlikelihood')
 
 # Autocorrelation
 # lags, acf, lines, axis = pl.acorr(y, maxlags = 20.)

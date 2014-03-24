@@ -5,10 +5,10 @@ def QP(X1, X2, theta):
     r = X1[:, None] - X2[None, :]
     # sample in log space
     theta = 10**theta
-    return theta[0]*np.exp(-np.sin(r*np.pi/theta[1])**2/theta[2]**2)*np.exp(-r**2/(2*theta[3]**2))
+#     return theta[0]*np.exp(-np.sin(r*np.pi/theta[1])**2/theta[2]**2)*np.exp(-r**2/(2*theta[3]**2))
 
     # fix period
-#     return theta[0]*np.exp(-np.sin(r*np.pi/2.)**2/theta[2]**2)*np.exp(-r**2/(2*theta[1]**2))
+    return theta[0]*np.exp(-np.sin(r*np.pi/1.)**2/theta[1]**2)*np.exp(-r**2/(2*theta[2]**2))
 
 def lnlike(theta, x, y, yerr):
     K = QP(x, x, theta) + np.diag(yerr**2)

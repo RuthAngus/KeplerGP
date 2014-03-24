@@ -31,8 +31,7 @@ yerr = yerr[0:-1:subsamp]
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-#     theta = np.exp(theta)
-    if -9.<theta[0]<2. and -6.<theta[1]<2. and -6.<theta[2]<2. and -6.<theta[3]<2.:
+    if -16.<theta[0]<10. and -6.<theta[1]<10. and -6.<theta[2]<10. and -6.<theta[3]<10.:
         return 0.0
     return -np.inf
 
@@ -65,7 +64,7 @@ print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
 
 # Sample the posterior probability for m.
 nwalkers, ndim = 64, len(theta)
-p0 = [theta+1e-5*np.random.rand(ndim) for i in range(nwalkers)]
+p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
 print("Burn-in")
 p0, lp, state = sampler.run_mcmc(p0, 100)
@@ -98,6 +97,7 @@ print 'mcmc result', theta
 
 print "Final lnlike = ", lnlike(theta, x, y, yerr)
 
+# plot mcmc result
 pl.clf()
 pl.errorbar(x, y, yerr=yerr, fmt='k.')
 xs = np.arange(min(x), max(x), 0.01)
@@ -105,9 +105,7 @@ pl.plot(xs, predict(xs, x, y, theta)[0], 'r-')
 pl.xlabel('time (days)')
 pl.savefig('result')
 
-# theta = np.concatenate((theta, np.array([0.1])))
-theta = [1e-8, 1., 10., 2.]
-theta = np.log(theta)
+# Grid over periods
 P = np.arange(0.1, 5, 0.1)
 P = np.log(P)
 L = np.empty_like(P)

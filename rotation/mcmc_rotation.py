@@ -31,8 +31,9 @@ yerr = yerr[0:-1:subsamp]
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-    theta = 10**theta
-    if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100.:# and 0.<theta[3]<100.:
+#     theta = 10**theta
+#     if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100. and 0.<theta[3]<100.:
+    if -9.<theta[0]<2. and -6.<theta[1]<2. and -6.<theta[2]<2. and -6.<theta[3]<2.:
         return 0.0
     return -np.inf
 
@@ -41,11 +42,15 @@ def lnprob(theta, x, y, yerr):
     lp = lnprior(theta)
     if not np.isfinite(lp):
         return -np.inf
-    return lp + lnlike(theta, x, y, yerr)
+    try:
+        return lp + lnlike(theta, x, y, yerr)
+    except:
+        print theta
+        raise
 
 # A, P, l2 (sin), l1 (exp)
-# theta = [1e-8, 1., 10., 2.]
-theta = [1e-8, 10., 2.]
+theta = [1e-8, 1., 10., 2.]
+# theta = [1e-8, 10., 2.]
 theta = np.log10(theta)
 
 pl.clf()
@@ -100,20 +105,20 @@ pl.plot(xs, predict(xs, x, y, theta)[0], 'r-')
 pl.xlabel('time (days)')
 pl.savefig('result')
 
-# # theta = np.concatenate((theta, np.array([0.1])))
-# theta = [1e-8, 1., 10., 2.]
-# theta = np.log10(theta)
-# P = np.arange(0.1, 5, 0.1)
-# P = np.log10(P)
-# L = np.empty_like(P)
-#
-# for i, per in enumerate(P):
-#     theta[1] = per
-#     L[i] = lnlike(theta, x, y, yerr)
-#
-# P = 10**P
-# pl.clf()
-# pl.plot(P, L, 'k-')
-# pl.xlabel('Period (days)')
-# pl.ylabel('likelihood')
-# pl.savefig('likelihood')
+# theta = np.concatenate((theta, np.array([0.1])))
+theta = [1e-8, 1., 10., 2.]
+theta = np.log10(theta)
+P = np.arange(0.1, 5, 0.1)
+P = np.log10(P)
+L = np.empty_like(P)
+
+for i, per in enumerate(P):
+    theta[1] = per
+    L[i] = lnlike(theta, x, y, yerr)
+
+P = 10**P
+pl.clf()
+pl.plot(P, L, 'k-')
+pl.xlabel('Period (days)')
+pl.ylabel('likelihood')
+pl.savefig('likelihood')

@@ -116,7 +116,7 @@ for i, per in enumerate(P):
     theta[1] = per
     L[i] = lnlike(theta, x, y, yerr)
 
-P = np.exp**P
+P = np.exp(P)
 pl.clf()
 pl.plot(P, L, 'k-')
 pl.xlabel('Period (days)')

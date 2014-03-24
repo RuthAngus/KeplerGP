@@ -31,8 +31,7 @@ yerr = yerr[0:-1:subsamp]
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-#     theta = 10**theta
-#     if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100. and 0.<theta[3]<100.:
+#     theta = np.exp(theta)
     if -9.<theta[0]<2. and -6.<theta[1]<2. and -6.<theta[2]<2. and -6.<theta[3]<2.:
         return 0.0
     return -np.inf
@@ -52,7 +51,7 @@ def lnprob(theta, x, y, yerr):
 # theta = [1e-8, 1., 10., 2.] # initial try
 theta = [1e-6, 1., 10., 10e-1] # better initialisation
 # theta = [1e-8, 10., 2.] # fixed period
-theta = np.log10(theta)
+theta = np.log(theta)
 
 pl.clf()
 pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -65,14 +64,14 @@ print "Initial parameters = ", theta
 print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
 
 # Sample the posterior probability for m.
-nwalkers, ndim = 32, len(theta)
-p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
+nwalkers, ndim = 64, len(theta)
+p0 = [theta+1e-5*np.random.rand(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
 print("Burn-in")
 p0, lp, state = sampler.run_mcmc(p0, 100)
 sampler.reset()
 print("Production run")
-sampler.run_mcmc(p0, 1000)
+sampler.run_mcmc(p0, 2000)
 
 print("Making triangle plot")
 fig_labels = ["$A$", "$l_1$", "$l_2$", "$P$"]
@@ -108,16 +107,16 @@ pl.savefig('result')
 
 # theta = np.concatenate((theta, np.array([0.1])))
 theta = [1e-8, 1., 10., 2.]
-theta = np.log10(theta)
+theta = np.log(theta)
 P = np.arange(0.1, 5, 0.1)
-P = np.log10(P)
+P = np.log(P)
 L = np.empty_like(P)
 
 for i, per in enumerate(P):
     theta[1] = per
     L[i] = lnlike(theta, x, y, yerr)
 
-P = 10**P
+P = np.exp**P
 pl.clf()
 pl.plot(P, L, 'k-')
 pl.xlabel('Period (days)')

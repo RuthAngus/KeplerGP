@@ -48,19 +48,20 @@ def lnprob(theta, x, y, yerr):
 
 # A, P, l2 (sin), l1 (exp)
 # theta = [1e-8, 1., 10., 2.] # initial try
-theta = [1e-6, 1., 10., 10e-1] # better initialisation
+theta = [-14., np.log(2.5), -3.0, np.log(100.0)] # better initialisation
 # theta = [1e-8, 10., 2.] # fixed period
-theta = np.log(theta)
+# theta = np.log(theta)
 
 pl.clf()
 pl.errorbar(x, y, yerr=yerr, fmt='k.')
-xs = np.arange(min(x), max(x), 0.01)
-pl.plot(xs, predict(xs, x, y, theta)[0], 'r-')
+xs = np.linspace(min(x), max(x), 100)
+pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
 pl.xlabel('time (days)')
 pl.savefig('data')
 
 print "Initial parameters = ", theta
 print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
+assert 0
 
 # Sample the posterior probability for m.
 nwalkers, ndim = 64, len(theta)
@@ -73,7 +74,7 @@ print("Production run")
 sampler.run_mcmc(p0, 2000)
 
 print("Making triangle plot")
-fig_labels = ["$A$", "$l_1$", "$l_2$", "$P$"]
+fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
 fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
 fig.savefig("triangle.png")
 

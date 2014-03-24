@@ -68,19 +68,22 @@ X = np.matrix([x]).T # convert inputs to matrix form (N x D)
 Xs = np.matrix([xs]).T  # convert inputs to matrix form (Q x D)
 
 # amplitude, squared exp length-scale (decay), period, periodic decay, white noise
-theta = [10e-9,1.,2.,.4,.3] # quasi-periodic
+# theta = [10e-9,1.,2.,.4,.3] # quasi-periodic
+theta = [.1,5.,2.,1.,.3] # quasi-periodic
 covfunc = cf
 
+# generate fake data
+K = cf(Xs, Xs, theta)
+y = np.random.multivariate_normal(np.zeros(len(xs)), K)
+x = xs
+
 def lnlike(h, X, y, covfunc):
-#     y = np.matrix(np.array(y).flatten()).T
+    y = np.matrix(np.array(y).flatten()).T
     K = covfunc(X, X, h, wn = True)
-#     sign, logdetK = np.linalg.slogdet(K)
-#     alpha = np.mat(la.lu_solve(la.lu_factor(K),y))
-#     logL = -0.5*y.T * alpha - 0.5*logdetK - (y.size/2.)*np.log(2)
-#     return np.array(logL).flatten()
-    factor, flag = cho_factor(K)
-    logdet = np.sum(2*np.log(np.diag(factor)))
-    return -0.5 * (np.dot(y, cho_solve((factor, flag), y)) + logdet + len(x)*np.log(2*np.pi))
+    sign, logdetK = np.linalg.slogdet(K)
+    alpha = np.mat(la.lu_solve(la.lu_factor(K),y))
+    logL = -0.5*y.T * alpha - 0.5*logdetK - (y.size/2.)*np.log(2)
+    return np.array(logL).flatten()
 
 # uniform priors (quasi-periodic)
 def lnprior(h):
@@ -108,8 +111,14 @@ pl.xlabel("$\mathrm{Time~(days)}$")
 pl.xlim(259, 272)
 pl.savefig('guess')
 
+# plot covariance matrix
+pl.clf()
+K = cf(X, X, theta)
+pl.imshow(K, interpolation = 'nearest', cmap = 'gray')
+pl.savefig('K')
+
 # grid in P
-P = np.arange(0.1, 10, 0.1)
+P = np.arange(0.1, 10., 0.1)
 lhs = np.zeros(len(P))
 
 for i in range(len(P)):
@@ -122,7 +131,7 @@ pl.xlabel('Period (days)')
 pl.ylabel('lnlike')
 pl.savefig('gridsearch')
 
-mlp = P[lhs == min(lhs)]
+mlp = P[lhs == max(lhs)]
 print 'max likelihood period = ', mlp
 print 'log likelihood = ', max(lhs)
 
@@ -142,3 +151,10 @@ pl.savefig('maxlikelihood')
 
 # Periodogram
 # f, Power = scipy.signal.periodogram(
+
+
+# def lnlike(h, X, y, covfunc):
+#     K = covfunc(X, X, h, wn = True)
+#     factor, flag = cho_factor(K)
+#     logdet = np.sum(2*np.log(np.diag(factor)))
+#     return -0.5 * (np.dot(y, cho_solve((factor, flag), y)) + logdet + len(x)*np.log(2*np.pi))

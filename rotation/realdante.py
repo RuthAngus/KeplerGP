@@ -23,10 +23,11 @@ yerr /= mu
 
 pl.clf()
 pl.errorbar(x, y, yerr=yerr, fmt='k.')
+pl.xlabel('time (days)')
 pl.savefig('data')
 
 theta = [1e-8, 1., 10., 2.]
-P = np.arange(0.1, 3, 0.1)
+P = np.arange(0.1, 5, 0.1)
 L = np.empty_like(P)
 
 for i, per in enumerate(P):
@@ -35,4 +36,6 @@ for i, per in enumerate(P):
 
 pl.clf()
 pl.plot(P, L, 'k-')
-pl.savefig('likelihood')
+pl.xlabel('Period (days)')
+pl.ylabel('likelihood')
+pl.savefig('likelihood2')

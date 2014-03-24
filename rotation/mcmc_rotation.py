@@ -28,7 +28,7 @@ pl.errorbar(x, y, yerr=yerr, fmt='k.')
 pl.xlabel('time (days)')
 pl.savefig('data')
 
-# uniform priors (quasi-periodic)
+# flat priors (quasi-periodic)
 def lnprior(h):
     if 0.<h[0]<100. and 0.<h[1]<100. and 0.<h[2]<100. and 0.<h[3]<10.:
         return 0.0
@@ -41,8 +41,8 @@ def lnprob(h, x, y, yerr):
         return -np.inf
     return lp + lnlike(h, x, y, yerr)
 
-theta = [1e-8, 1., 10., 2.]
-# theta = [1e-8, 10., 2.]
+# theta = [1e-8, 1., 10., 2.]
+theta = [1e-8, 10., 2.]
 
 print "Initial parameters = ", theta
 print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
@@ -52,10 +52,10 @@ nwalkers, ndim = 32, len(theta)
 p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
 print("Burn-in")
-p0, lp, state = sampler.run_mcmc(p0, 100)
-sampler.reset()
-print("Production run")
-sampler.run_mcmc(p0, 1000)
+p0, lp, state = sampler.run_mcmc(p0, 500)
+# sampler.reset()
+# print("Production run")
+# sampler.run_mcmc(p0, 100)
 
 print("Making triangle plot")
 fig_labels = ["$A$", "$l_1$", "$l_2$", "$P$"]

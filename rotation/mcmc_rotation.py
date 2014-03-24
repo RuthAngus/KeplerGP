@@ -29,20 +29,22 @@ pl.xlabel('time (days)')
 pl.savefig('data')
 
 # flat priors (quasi-periodic)
-def lnprior(h):
-    if 0.<h[0]<100. and 0.<h[1]<100. and 0.<h[2]<100. and 0.<h[3]<10.:
+def lnprior(theta):
+    theta = 10**theta
+    if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100. and 0.<theta[3]<10.:
         return 0.0
     return -np.inf
 
 # posterior prob
-def lnprob(h, x, y, yerr):
-    lp = lnprior(h)
+def lnprob(theta, x, y, yerr):
+    lp = lnprior(theta)
     if not np.isfinite(lp):
         return -np.inf
-    return lp + lnlike(h, x, y, yerr)
+    return lp + lnlike(theta, x, y, yerr)
 
 # theta = [1e-8, 1., 10., 2.]
 theta = [1e-8, 10., 2.]
+theta = np.log10(theta)
 
 print "Initial parameters = ", theta
 print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"

@@ -3,10 +3,12 @@ from scipy.linalg import cho_factor, cho_solve
 
 def QP(X1, X2, theta):
     r = X1[:, None] - X2[None, :]
-#     return theta[0]*np.exp(-np.sin(r*np.pi/theta[1])**2/theta[2]**2)*np.exp(-r**2/(2*theta[3]**2))
     # sample in log space
     theta = 10**theta
-    return theta[0]*np.exp(-np.sin(r*np.pi/2.)**2/theta[1]**2)*np.exp(-r**2/(2*theta[2]**2))
+    return theta[0]*np.exp(-np.sin(r*np.pi/theta[1])**2/theta[2]**2)*np.exp(-r**2/(2*theta[3]**2))
+
+    # fix period
+#     return theta[0]*np.exp(-np.sin(r*np.pi/2.)**2/theta[2]**2)*np.exp(-r**2/(2*theta[1]**2))
 
 def lnlike(theta, x, y, yerr):
     K = QP(x, x, theta) + np.diag(yerr**2)
@@ -14,3 +16,13 @@ def lnlike(theta, x, y, yerr):
     logdet = 2*np.sum(np.log(np.diag(L)))
     alpha = cho_solve((L, flag), y)
     return -.5* (np.dot(y, alpha) + logdet)
+
+def predict(xs, x, y, theta):
+    K = QP(x, x, theta)
+    Kss = QP(xs, xs, theta)
+    Ks = QP(xs, x, theta)
+    Kinv = np.linalg.inv( np.matrix(K) )
+    y = np.matrix(np.array(y).flatten()).T
+    prec_mean = Ks * Kinv * y
+    prec_cov = Kss - Ks * Kinv * Ks.T
+    return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))

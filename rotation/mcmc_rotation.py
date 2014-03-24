@@ -1,7 +1,7 @@
 import numpy as np
 import pyfits
 import matplotlib.pyplot as pl
-from lnlikefn import lnlike
+from lnlikefn import lnlike, predict
 import emcee
 import triangle
 
@@ -23,15 +23,16 @@ mu = np.median(y)
 y = y/mu - 1.
 yerr /= mu
 
-pl.clf()
-pl.errorbar(x, y, yerr=yerr, fmt='k.')
-pl.xlabel('time (days)')
-pl.savefig('data')
+# subsample
+subsamp = 5
+x = x[0:-1:subsamp]
+y = y[0:-1:subsamp]
+yerr = yerr[0:-1:subsamp]
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
     theta = 10**theta
-    if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100.:# and 0.<theta[3]<10.:
+    if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100. and 0.<theta[3]<100.:
         return 0.0
     return -np.inf
 
@@ -42,10 +43,17 @@ def lnprob(theta, x, y, yerr):
         return -np.inf
     return lp + lnlike(theta, x, y, yerr)
 
-# A, l1 (exp), l2 (sin), P
-# theta = [1e-8, 2., 10., 1.]
-theta = [1e-8, 2., 10.]
+# A, P, l2 (sin), l1 (exp)
+theta = [1e-8, 1., 10., 2.]
 theta = np.log10(theta)
+
+pl.clf()
+pl.errorbar(x, y, yerr=yerr, fmt='k.')
+xs = np.arange(min(x), max(x), 0.01)
+pl.plot(xs, predict(xs, x, y, theta)[0], 'r-')
+pl.xlabel('time (days)')
+pl.savefig('data')
+raw_input('enter')
 
 print "Initial parameters = ", theta
 print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
@@ -55,10 +63,10 @@ nwalkers, ndim = 32, len(theta)
 p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
 print("Burn-in")
-p0, lp, state = sampler.run_mcmc(p0, 500)
-# sampler.reset()
-# print("Production run")
-# sampler.run_mcmc(p0, 100)
+p0, lp, state = sampler.run_mcmc(p0, 100)
+sampler.reset()
+print("Production run")
+sampler.run_mcmc(p0, 500)
 
 print("Making triangle plot")
 fig_labels = ["$A$", "$l_1$", "$l_2$", "$P$"]
@@ -80,20 +88,32 @@ samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
 mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                   zip(*np.percentile(samples, [16, 50, 84], axis=0)))
 
-h = np.array(mcmc_result)[:, 0]
-print 'mcmc result', h
+theta = np.array(mcmc_result)[:, 0]
+print 'mcmc result', theta
 
-print "Final lnlike = ", lnlike(h, x, y, yerr)
+print "Final lnlike = ", lnlike(theta, x, y, yerr)
 
-# P = np.arange(0.1, 5, 0.1)
-# L = np.empty_like(P)
+pl.clf()
+pl.errorbar(x, y, yerr=yerr, fmt='k.')
+xs = np.arange(min(x), max(x), 0.01)
+pl.plot(xs, predict(xs, x, y, theta)[0], 'r-')
+pl.xlabel('time (days)')
+pl.savefig('result')
 
-# for i, per in enumerate(P):
-#     theta[1] = per
-#     L[i] = lnlike(theta, x, y, yerr)
+# theta = np.concatenate((theta, np.array([0.1])))
+theta = [1e-8, 1., 10., 2.]
+theta = np.log10(theta)
+P = np.arange(0.1, 5, 0.1)
+P = np.log10(P)
+L = np.empty_like(P)
 
-# pl.clf()
-# pl.plot(P, L, 'k-')
-# pl.xlabel('Period (days)')
-# pl.ylabel('likelihood')
-# pl.savefig('likelihood')
+for i, per in enumerate(P):
+    theta[1] = per
+    L[i] = lnlike(theta, x, y, yerr)
+
+P = 10**P
+pl.clf()
+pl.plot(P, L, 'k-')
+pl.xlabel('Period (days)')
+pl.ylabel('likelihood')
+pl.savefig('likelihood')

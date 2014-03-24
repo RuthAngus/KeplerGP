@@ -31,7 +31,7 @@ pl.savefig('data')
 # flat priors (quasi-periodic)
 def lnprior(theta):
     theta = 10**theta
-    if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100. and 0.<theta[3]<10.:
+    if 0.<theta[0]<100. and 0.<theta[1]<100. and 0.<theta[2]<100.:# and 0.<theta[3]<10.:
         return 0.0
     return -np.inf
 
@@ -42,8 +42,9 @@ def lnprob(theta, x, y, yerr):
         return -np.inf
     return lp + lnlike(theta, x, y, yerr)
 
-# theta = [1e-8, 1., 10., 2.]
-theta = [1e-8, 10., 2.]
+# A, l1 (exp), l2 (sin), P
+# theta = [1e-8, 2., 10., 1.]
+theta = [1e-8, 2., 10.]
 theta = np.log10(theta)
 
 print "Initial parameters = ", theta

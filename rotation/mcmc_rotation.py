@@ -49,8 +49,9 @@ def lnprob(theta, x, y, yerr):
         raise
 
 # A, P, l2 (sin), l1 (exp)
-theta = [1e-8, 1., 10., 2.]
-# theta = [1e-8, 10., 2.]
+# theta = [1e-8, 1., 10., 2.] # initial try
+theta = [1e-6, 1., 10., 10e-1] # better initialisation
+# theta = [1e-8, 10., 2.] # fixed period
 theta = np.log10(theta)
 
 pl.clf()
@@ -71,7 +72,7 @@ print("Burn-in")
 p0, lp, state = sampler.run_mcmc(p0, 100)
 sampler.reset()
 print("Production run")
-sampler.run_mcmc(p0, 500)
+sampler.run_mcmc(p0, 1000)
 
 print("Making triangle plot")
 fig_labels = ["$A$", "$l_1$", "$l_2$", "$P$"]

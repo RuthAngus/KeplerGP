@@ -54,7 +54,7 @@ theta = [-14., np.log(2.5), -3.0, np.log(100.0)] # better initialisation
 
 pl.clf()
 pl.errorbar(x, y, yerr=yerr, fmt='k.')
-xs = np.linspace(min(x), max(x), 100)
+xs = np.linspace(min(x), max(x), 500)
 pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
 pl.xlabel('time (days)')
 pl.savefig('data')

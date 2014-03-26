@@ -1,3 +1,3 @@
-modelling:
-	pdflatex modelling
-	open modelling.pdf
+rotation:
+	pdflatex rotation
+	open rotation.pdf

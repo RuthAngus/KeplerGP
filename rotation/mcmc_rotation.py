@@ -7,30 +7,6 @@ from lnlikefn import lnlike, predict
 import emcee
 import triangle
 
-# Load data
-hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
-tbdata = hdulist[1].data
-x = tbdata["TIME"]
-y = tbdata["PDCSAP_FLUX"]
-yerr = tbdata["PDCSAP_FLUX_ERR"]
-q = tbdata["SAP_QUALITY"]
-
-# remove nans
-n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)*(q==0)
-l = 500.
-x = x[n][:l]
-y = y[n][:l]
-yerr = yerr[n][:l]
-mu = np.median(y)
-y = y/mu - 1.
-yerr /= mu
-
-# subsample
-subsamp = 5
-x = x[0:-1:subsamp]
-y = y[0:-1:subsamp]
-yerr = yerr[0:-1:subsamp]
-
 # flat priors (quasi-periodic)
 def lnprior(theta):
     if -16.<theta[0]<10. and -6.<theta[1]<10. and -6.<theta[2]<10. and -6.<theta[3]<10.:
@@ -50,9 +26,34 @@ def lnprob(theta, x, y, yerr):
 
 if __name__ == "__main__":
 
+    # Load data
+    hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
+    tbdata = hdulist[1].data
+    x = tbdata["TIME"]
+    y = tbdata["PDCSAP_FLUX"]
+    yerr = tbdata["PDCSAP_FLUX_ERR"]
+    q = tbdata["SAP_QUALITY"]
+
+    # remove nans
+    n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)*(q==0)
+    l = 200.
+    x = x[n][:l]
+    y = y[n][:l]
+    yerr = yerr[n][:l]
+    mu = np.median(y)
+    y = y/mu - 1.
+    yerr /= mu
+
+    # subsample
+    subsamp = 1
+    x = x[0:-1:subsamp]
+    y = y[0:-1:subsamp]
+    yerr = yerr[0:-1:subsamp]
+
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth
+#     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth
+    theta = [-14.2, 0.69, 2.5, -1.] # better initialisation - Ruth
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -60,6 +61,7 @@ if __name__ == "__main__":
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
     pl.xlabel('time (days)')
     pl.savefig('data')
+    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
@@ -74,10 +76,12 @@ if __name__ == "__main__":
     print("Production run")
     sampler.run_mcmc(p0, 2000)
 
-    print("Making triangle plot")
+    print("Making triangle plots")
     fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
     fig = triangle.corner(np.exp(sampler.flatchain), truths=np.exp(theta), labels=fig_labels[:len(theta)])
     fig.savefig("triangle.png")
+    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+    fig.savefig("triangle_linear.png")
 
     print("Plotting traces")
     pl.figure()

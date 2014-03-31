@@ -5,7 +5,7 @@ def QP(X1, X2, theta):
     r = X1[:, None] - X2[None, :]
     # sample in log space
     theta = np.exp(theta)
-    print(theta)
+#     print(theta)
     return theta[0]*np.exp(-np.sin(r*np.pi/theta[1])**2/theta[2]**2)*np.exp(-r**2/(2*theta[3]**2))
 
     # fix period
@@ -19,7 +19,6 @@ def lnlike(theta, x, y, yerr):
     return -.5* (np.dot(y, alpha) + logdet)
 
 def predict(xs, x, y, yerr, theta):
-    print("dude")
     K = QP(x, x, theta) + np.diag(yerr**2)
     Kss = QP(xs, xs, theta)
     Ks = QP(xs, x, theta)
@@ -28,4 +27,4 @@ def predict(xs, x, y, yerr, theta):
 #     y = np.matrix(np.array(y).flatten()).T
 #     prec_mean = Ks * Kinv * y
 #     prec_cov = Kss - Ks * Kinv * Ks.T
-    return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))
+#     return np.array(prec_mean).flatten(), np.array(np.sqrt(np.diag(prec_cov)))

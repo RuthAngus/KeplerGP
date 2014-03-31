@@ -1,7 +1,7 @@
 import numpy as np
 import pyfits
-from savefig import monkey_patch
-monkey_patch()
+# from savefig import monkey_patch
+# monkey_patch()
 import matplotlib.pyplot as pl
 from lnlikefn import lnlike, predict
 import emcee
@@ -48,78 +48,87 @@ def lnprob(theta, x, y, yerr):
         print theta
         raise
 
-# A, P, l2 (sin), l1 (exp)
-# theta = [1e-8, 1., 10., 2.] # initial try
-theta = [-14., np.log(2.5), -3.0, np.log(100.0)] # better initialisation
-# theta = [1e-8, 10., 2.] # fixed period
-# theta = np.log(theta)
+if __name__ == "__main__":
 
-pl.clf()
-pl.errorbar(x, y, yerr=yerr, fmt='k.')
-xs = np.linspace(min(x), max(x), 500)
-pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
-pl.xlabel('time (days)')
-pl.savefig('data')
+    # initial hyperparameters
+    # A, P, l2 (sin), l1 (exp)
 
-print "Initial parameters = ", theta
-print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
-assert 0
+    # Linear theta
+    # theta = [1e-8, 1., 10., 2.] # initial try
+    # theta = [1e-8, 10., 2.] # fixed period
+    # theta = np.log(theta)
 
-# Sample the posterior probability for m.
-nwalkers, ndim = 64, len(theta)
-p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
-print("Burn-in")
-p0, lp, state = sampler.run_mcmc(p0, 100)
-sampler.reset()
-print("Production run")
-sampler.run_mcmc(p0, 2000)
+    # exponential theta
+    # theta = [-14., np.log(2.5), -3.0, np.log(100.0)] # better initialisation - Dan
+    theta = [-14., -2., 3., -1] # better initialisation - Ruth
 
-print("Making triangle plot")
-fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
-fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
-fig.savefig("triangle.png")
-
-print("Plotting traces")
-pl.figure()
-for i in range(ndim):
     pl.clf()
-    pl.axhline(theta[i], color = "r")
-    pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3)
-    pl.savefig("{0}.png".format(i))
+    pl.errorbar(x, y, yerr=yerr, fmt='k.')
+    xs = np.linspace(min(x), max(x), 500)
+    pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
+    pl.xlabel('time (days)')
+    pl.savefig('data')
 
-# Flatten chain
-samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+    print "Initial parameters = (exp)", theta
+    print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
+    raw_input('enter')
 
-# Find values
-mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
-                  zip(*np.percentile(samples, [16, 50, 84], axis=0)))
+    # Sample the posterior probability for m.
+    nwalkers, ndim = 64, len(theta)
+    p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
+    print("Burn-in")
+    p0, lp, state = sampler.run_mcmc(p0, 100)
+    sampler.reset()
+    print("Production run")
+    sampler.run_mcmc(p0, 2000)
 
-theta = np.array(mcmc_result)[:, 0]
-print 'mcmc result', theta
+    print("Making triangle plot")
+    fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
+    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+    fig.savefig("triangle.png")
 
-print "Final lnlike = ", lnlike(theta, x, y, yerr)
+    print("Plotting traces")
+    pl.figure()
+    for i in range(ndim):
+        pl.clf()
+        pl.axhline(theta[i], color = "r")
+        pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3)
+        pl.savefig("{0}.png".format(i))
 
-# plot mcmc result
-pl.clf()
-pl.errorbar(x, y, yerr=yerr, fmt='k.')
-xs = np.arange(min(x), max(x), 0.01)
-pl.plot(xs, predict(xs, x, y, theta)[0], 'r-')
-pl.xlabel('time (days)')
-pl.savefig('result')
+    # Flatten chain
+    samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
 
-# Grid over periods
-P = np.arange(0.1, 5, 0.1)
-P = np.log(P)
-L = np.empty_like(P)
+    # Find values
+    mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+                      zip(*np.percentile(samples, [16, 50, 84], axis=0)))
 
-for i, per in enumerate(P):
-    theta[1] = per
-    L[i] = lnlike(theta, x, y, yerr)
+    theta = np.array(mcmc_result)[:, 0]
+    print 'mcmc result (exp) = ', np.exp(theta)
+    print 'mcmc result (lin) = ', theta
 
-P = np.exp(P)
-pl.clf()
-pl.plot(P, L, 'k-')
-pl.xlabel('Period (days)')
-pl.ylabel('likelihood')
-pl.savefig('likelihood')
+    print "Final lnlike = ", lnlike(theta, x, y, yerr)
+
+    # plot mcmc result
+    pl.clf()
+    pl.errorbar(x, y, yerr=yerr, fmt='k.')
+    xs = np.arange(min(x), max(x), 0.01)
+    pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
+    pl.xlabel('time (days)')
+    pl.savefig('result')
+
+    # Grid over periods
+    P = np.arange(0.1, 5, 0.1)
+    P = np.log(P)
+    L = np.empty_like(P)
+
+    for i, per in enumerate(P):
+        theta[1] = per
+        L[i] = lnlike(theta, x, y, yerr)
+
+    P = np.exp(P)
+    pl.clf()
+    pl.plot(P, L, 'k-')
+    pl.xlabel('Period (days)')
+    pl.ylabel('likelihood')
+    pl.savefig('likelihood')

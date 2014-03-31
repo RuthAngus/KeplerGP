@@ -9,7 +9,7 @@ import triangle
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-    if -16.<theta[0]<10. and -6.<theta[1]<10. and -6.<theta[2]<10. and -6.<theta[3]<10.:
+    if -16.<theta[0]<10. and -1.<theta[1]<1.. and -6.<theta[2]<10. and -6.<theta[3]<10.:
         return 0.0
     return -np.inf
 

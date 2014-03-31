@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # initial hyperparameters (exponential)
     # A, P, l2 (sin), l1 (exp)
-    theta = [-14., -2., 3., -1] # better initialisation - Ruth
+    theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -83,8 +83,8 @@ if __name__ == "__main__":
     pl.figure()
     for i in range(ndim):
         pl.clf()
-        pl.axhline(theta[i], color = "r")
-        pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3)
+        pl.axhline(theta[i], color = "r", zorder=2)
+        pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3, zorder=1)
         pl.savefig("{0}.png".format(i))
 
     # Flatten chain

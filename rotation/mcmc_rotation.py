@@ -50,7 +50,7 @@ def lnprob(theta, x, y, yerr):
 
 if __name__ == "__main__":
 
-    # initial hyperparameters (exponential)
+    # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     print("Making triangle plot")
     fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
-    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+    fig = triangle.corner(np.exp(sampler.flatchain), truths=np.exp(theta), labels=fig_labels[:len(theta)])
     fig.savefig("triangle.png")
 
     print("Plotting traces")

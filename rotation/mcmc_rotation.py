@@ -57,7 +57,8 @@ if __name__ == "__main__":
 #     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth 3223000
 #     theta = [-14.2, 0.69, 2.5, -1.] # starting at correct period 3223000
 #     theta = [-15., 0.69, .5, -1.] # restricting l2 3223000
-    theta = [-14., -0.9, -.75, -1.] # 10295224
+    theta = [-14., -0.9, .5, -1.] # 10295224
+    theta = [-14., .4, 2., 15.] # 10295224 copying parameters from p_grid
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')

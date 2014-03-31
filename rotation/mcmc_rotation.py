@@ -9,7 +9,8 @@ import triangle
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-    if -16.<theta[0]<10. and -1.<theta[1]<1.. and -6.<theta[2]<10. and -6.<theta[3]<10.:
+#     if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -1.6<theta[3]<10.:
+    if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -6.<theta[3]<10.:
         return 0.0
     return -np.inf
 
@@ -27,7 +28,8 @@ def lnprob(theta, x, y, yerr):
 if __name__ == "__main__":
 
     # Load data
-    hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
+#     hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
+    hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
     tbdata = hdulist[1].data
     x = tbdata["TIME"]
     y = tbdata["PDCSAP_FLUX"]
@@ -36,7 +38,7 @@ if __name__ == "__main__":
 
     # remove nans
     n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)*(q==0)
-    l = 200.
+    l = 300.
     x = x[n][:l]
     y = y[n][:l]
     yerr = yerr[n][:l]
@@ -52,8 +54,10 @@ if __name__ == "__main__":
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-#     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth
-    theta = [-14.2, 0.69, 2.5, -1.] # better initialisation - Ruth
+#     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth 3223000
+#     theta = [-14.2, 0.69, 2.5, -1.] # starting at correct period 3223000
+#     theta = [-15., 0.69, .5, -1.] # restricting l2 3223000
+    theta = [-14., -0.9, -.75, -1.] # 10295224
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -61,7 +65,6 @@ if __name__ == "__main__":
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
     pl.xlabel('time (days)')
     pl.savefig('data')
-    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
@@ -71,17 +74,17 @@ if __name__ == "__main__":
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
     print("Burn-in")
-    p0, lp, state = sampler.run_mcmc(p0, 100)
+    p0, lp, state = sampler.run_mcmc(p0, 200)
     sampler.reset()
     print("Production run")
-    sampler.run_mcmc(p0, 2000)
+    sampler.run_mcmc(p0, 1500)
 
     print("Making triangle plots")
     fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
     fig = triangle.corner(np.exp(sampler.flatchain), truths=np.exp(theta), labels=fig_labels[:len(theta)])
-    fig.savefig("triangle.png")
-    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
     fig.savefig("triangle_linear.png")
+    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+    fig.savefig("triangle.png")
 
     print("Plotting traces")
     pl.figure()
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     pl.savefig('result')
 
     # Grid over periods
-    P = np.arange(0.1, 5, 0.1)
+    P = np.arange(0.1, 5, 0.01)
     P = np.log(P)
     L = np.empty_like(P)
 

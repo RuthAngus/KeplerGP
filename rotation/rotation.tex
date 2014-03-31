@@ -33,7 +33,7 @@ A GP model can cope with quasi-periodic, non-sinusoidal signals, it can model sy
 
 \section{Introduction}
 
-Thanks to the high-precision photometry provided by Kepler, stellar rotation periods can now be measured directly from light curves.
+Thanks to the high-precision photometry provided by Kepler, stellar rotation periods can be measured directly from light curves.
 % Spotted, rotating stars produce variable light curves due to the repeated
 The nature of this variability tends to be non-sinusoidal --- star spot patterns are irregular.
 Stars do not rotate as solid bodys --- they have different rotation periods at different latitudes.
@@ -67,7 +67,7 @@ Small $l$ will produce a rapidly varying mean function, where data points are on
 Kernel functions can be periodic,  --- a simple periodic function might look like the following:
 
 \begin{equation}
-	k_{ij} = A\exp\left[{\frac{-\sin^2\left({\frac{\pi(x_i-x_j)}{P})}\right)}{L^2}}\right],
+	k_{ij} = A\exp\left[{\frac{-\sin^2\left({\frac{\pi(x_i-x_j)}{P}}\right)}{L^2}}\right],
 \end{equation}
 
 where P is the period and L is something like a characteristic length scale in phase-space.
@@ -88,23 +88,29 @@ Given a data set, $\mathbf{x_n} = {x_1, x_2, ..., x_n}$, $\mathbf{y_n} = {y_1, y
 
 where K is the covariance matrix, constructed from $\mathbf{x_n}$ and the selected covariance kernel.
 
+\subsection{Sampling the Posterior}
+
 \subsection{Computational tractability}
 
-Computing a GP likelihood can be expensive as the determinant and inverse of the covariance matrix must be calculated (although, in reality the inverse is never actually computed).
-Naively, these operations scale like $N^3$.
+Computing a GP likelihood requires inverting and calculating the determinant of the covariance matrix which can be expensive:
+these operations naively scale like $\mathcal{O}(N^3)$.
+% Computing a GP likelihood can be expensive as the determinant and inverse of the covariance matrix must be calculated (although, in reality the inverse is never actually computed).
 In practise this covariance matrix can be very large --- for example, one quarter of long cadence Kepler data has around 4000 data points and will produce a 4000x4000 covariance matrix.
 For the specific problem of rotation period measurement, the likelihood is likely to be very multi-modal and we therefore opt to sample from the posterior using MCMC.
 This means that the determininant and inverse of a very large covariance matrix must be calculated once per likelihood call.
-It is easy to see that this problem could very quickly become intractable.
+It is easy to see that this problem very quickly becomes intractable.
 
 Luckily there are some tricks we can employ to speed the process up. %thank god!
-Decomposing the matrix into smaller matrices, e.g. using a Cholesky decomposition can speed up the process a little.
-Talk more about the methods used in George.
-Scales as $N\log^2{N}$.
-Circulant method scales as $N\log{N}$.
+% Decomposing the matrix into smaller matrices, e.g. using a Cholesky decomposition can speed up the process a little.
+In practise, covariance matrices are often sparse and this sparsity can be exploited to speed up these computations.
+For the purposes of measuring stellar rotation in Kepler data, covariance matrices will be relatively dense.
+Subsampling or binning the data could reduce the dimensionality of the GP, however % reason why this isn't as good
+We use the method for fast determinant calculation described in (Sivaram et al, 2014) in which the matrix is decomposed into smaller matrices, etc.
+The determinant calculation then scales like $\mathcal{O}(N\log^2{N})$.
+%Circulant method scales as $N\log{N}$.
 
 \section{Future work}
 
-Figure out how to join quarters together with a GP.
+Figure out how to join quarters together with a GP?
 
 \end{document}

@@ -1,5 +1,7 @@
 import numpy as np
 import pyfits
+from savefig import monkey_patch
+monkey_patch()
 import matplotlib.pyplot as pl
 from lnlikefn import lnlike, predict
 import emcee

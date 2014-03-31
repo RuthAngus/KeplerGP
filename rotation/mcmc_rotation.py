@@ -50,16 +50,8 @@ def lnprob(theta, x, y, yerr):
 
 if __name__ == "__main__":
 
-    # initial hyperparameters
+    # initial hyperparameters (exponential)
     # A, P, l2 (sin), l1 (exp)
-
-    # Linear theta
-    # theta = [1e-8, 1., 10., 2.] # initial try
-    # theta = [1e-8, 10., 2.] # fixed period
-    # theta = np.log(theta)
-
-    # exponential theta
-    # theta = [-14., np.log(2.5), -3.0, np.log(100.0)] # better initialisation - Dan
     theta = [-14., -2., 3., -1] # better initialisation - Ruth
 
     pl.clf()
@@ -71,7 +63,6 @@ if __name__ == "__main__":
 
     print "Initial parameters = (exp)", theta
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
-    raw_input('enter')
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)

@@ -9,8 +9,8 @@ import triangle
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-#     if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -1.6<theta[3]<10.:
-    if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -6.<theta[3]<16.:
+    if -16.<theta[0]<10. and -.1<theta[1]<3. and -6.<theta[2]<10. and -6.<theta[3]<16.\
+            and -6.<theta[4]<3.:
         return 0.0
     return -np.inf
 
@@ -28,7 +28,6 @@ def lnprob(theta, x, y, yerr):
 if __name__ == "__main__":
 
     # Load data
-#     hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr003223000-2009350155506_llc.fits")
     hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
     tbdata = hdulist[1].data
     x = tbdata["TIME"]
@@ -55,12 +54,7 @@ if __name__ == "__main__":
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-#     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth 3223000
-#     theta = [-14.2, 0.69, 2.5, -1.] # starting at correct period 3223000
-#     theta = [-15., 0.69, .5, -1.] # restricting l2 3223000
-#     theta = [-14., -0.9, .5, -1.] # 10295224
-    theta = [-14., .4, .5, -1.] # 10295224
-#     theta = [-14., .4, .5, 5.] # 10295224 copying parameters from p_grid
+    theta = [-14., .4, .5, -1., 2.3] # 10295224
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -83,7 +77,7 @@ if __name__ == "__main__":
     sampler.run_mcmc(p0, 1500)
 
     print("Making triangle plots")
-    fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$"]
+    fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$", "$s$"]
     fig = triangle.corner(np.exp(sampler.flatchain), truths=np.exp(theta), labels=fig_labels[:len(theta)])
     fig.savefig("triangle_linear.png")
     fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])

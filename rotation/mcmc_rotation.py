@@ -43,12 +43,12 @@ if __name__ == "__main__":
     y = y/np.median(y) -1
 
     # generate fake data
-    pars = [-14., .4, .5, -1., -2.3]
+    pars = [-14., 0., .5, .5, .7]
     y = synthetic_data(x, yerr, pars)
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [-14., .4, .5, -1., -2.3] # 10295224
+    theta = [-14., 0., .5, .5, .7] # 10295224
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -56,6 +56,7 @@ if __name__ == "__main__":
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
     pl.xlabel('time (days)')
     pl.savefig('data')
+    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
@@ -65,10 +66,10 @@ if __name__ == "__main__":
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
     print("Burn-in")
-    p0, lp, state = sampler.run_mcmc(p0, 200)
-    sampler.reset()
-    print("Production run")
-    sampler.run_mcmc(p0, 1500)
+    p0, lp, state = sampler.run_mcmc(p0, 2000)
+#     sampler.reset()
+#     print("Production run")
+#     sampler.run_mcmc(p0, 1500)
 
     print("Making triangle plots")
     fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$", "$s$"]
@@ -100,7 +101,6 @@ if __name__ == "__main__":
 
     # plot mcmc result
     pl.clf()
-#     yerr = np.ones_like(theta[4])
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
     xs = np.arange(min(x), max(x), 0.01)
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     P = np.exp(P)
     pl.clf()
-    pl.plot(P, L, 'k-')
+    pl.plot(P, np.log(L), 'k-')
     pl.xlabel('Period (days)')
     pl.ylabel('likelihood')
     pl.savefig('likelihood')

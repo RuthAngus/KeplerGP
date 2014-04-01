@@ -77,7 +77,7 @@ Kernel functions have the fantastic property that they can be added or multiplie
 To construct our quasi-periodic kernel function we multiply a simple periodic kernel with a squared exponential,
 
 \begin{equation}
-	k_{ij} = A\exp\left[{\frac{-(x_i-x_j)}{2l^2}}\right]\exp\left[\frac{-\sin^2\left(\frac{\pi(x_i-x_j)}{P}\right)}{L^2}\right],
+	k_{ij} = A\exp\left[{\frac{-(x_i-x_j)}{2l_1^2}}\right]\exp\left[\frac{-\sin^2\left(\frac{\pi(x_i-x_j)}{P}\right)}{l_2^2}\right],
 \end{equation}
 
 Given a data set, $\mathbf{x_n} = {x_1, x_2, ..., x_n}$, $\mathbf{y_n} = {y_1, y_2, ..., y_n}$, where in our specific case $x$ is time and $y$ is flux, the log-likelihood function will be as follows:
@@ -112,5 +112,12 @@ The determinant calculation then scales like $\mathcal{O}(N\log^2{N})$.
 \section{Future work}
 
 Figure out how to join quarters together with a GP?
+
+\section{Current working notes}
+
+We include white noise as a free parameter.
+If we don't allow white noise to be inferred from the data and just use the quoted uncertainties on the Kepler data, we find that the GP attemps to explain all the signal with the squared exponential term.
+i.e. $l_1$, the parameter controlling the squared exponential fall-off wants to be very small.
+When making $l_1$ very large, the squared exp term gets very small and the predictive mean looks very periodic.
 
 \end{document}

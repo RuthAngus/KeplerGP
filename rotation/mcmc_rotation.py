@@ -6,6 +6,8 @@ import matplotlib.pyplot as pl
 from lnlikefn import lnlike, predict
 import emcee
 import triangle
+from load_dataGP import load
+from synth import synthetic_data
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
@@ -27,30 +29,19 @@ def lnprob(theta, x, y, yerr):
 
 if __name__ == "__main__":
 
-    # Load data
-    hdulist = pyfits.open("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
-    tbdata = hdulist[1].data
-    x = tbdata["TIME"]
-    y = tbdata["PDCSAP_FLUX"]
-    yerr = tbdata["PDCSAP_FLUX_ERR"]
-    q = tbdata["SAP_QUALITY"]
+    # Load real data
+    x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
 
-    # remove nans
-    n = np.isfinite(x)*np.isfinite(y)*np.isfinite(yerr)*(q==0)
+    # generate fake data
+    pars = [-14., .4, .5, -1., 2.3]
+    y = synthetic_data(x, yerr, pars)
+
     l = 300.
-    x = x[n][:l]
-    y = y[n][:l]
-    yerr = yerr[n][:l]
-    mu = np.median(y)
-    y = y/mu - 1.
-    yerr /= mu
-    yerr *= 10.
-
-    # subsample
-    subsamp = 1
-    x = x[0:-1:subsamp]
-    y = y[0:-1:subsamp]
-    yerr = yerr[0:-1:subsamp]
+    x = x[:l]
+    y = y[:l]
+    yerr = yerr[:l]
+    yerr /= np.median(y)
+    y = y/np.median(y) -1
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)

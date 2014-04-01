@@ -11,8 +11,9 @@ from synth import synthetic_data
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-    if -16.<theta[0]<10. and -.1<theta[1]<3. and -6.<theta[2]<10. and -6.<theta[3]<16.\
-            and -6.<theta[4]<3.:
+#     if -16.<theta[0]<10. and -.1<theta[1]<3. and -6.<theta[2]<10. and -6.<theta[3]<16.\
+    if -16.<theta[0]<12. and -2.<theta[1]<3. and -2.<theta[2]<2. and -2.<theta[3]<2.\
+            and -1.<theta[4]<2.:
         return 0.0
     return -np.inf
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [-14., 0., .5, .5, .7] # 10295224
+    theta = [-14., 2., .0, .0, 1.] # 10295224
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')

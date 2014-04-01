@@ -10,7 +10,7 @@ import triangle
 # flat priors (quasi-periodic)
 def lnprior(theta):
 #     if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -1.6<theta[3]<10.:
-    if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -6.<theta[3]<10.:
+    if -16.<theta[0]<10. and -1.<theta[1]<1.7 and -6.<theta[2]<10. and -6.<theta[3]<16.:
         return 0.0
     return -np.inf
 
@@ -45,6 +45,7 @@ if __name__ == "__main__":
     mu = np.median(y)
     y = y/mu - 1.
     yerr /= mu
+    yerr *= 10.
 
     # subsample
     subsamp = 1
@@ -57,8 +58,9 @@ if __name__ == "__main__":
 #     theta = [-14.2, -1.85, 2.5, -1.] # better initialisation - Ruth 3223000
 #     theta = [-14.2, 0.69, 2.5, -1.] # starting at correct period 3223000
 #     theta = [-15., 0.69, .5, -1.] # restricting l2 3223000
-    theta = [-14., -0.9, .5, -1.] # 10295224
-    theta = [-14., .4, 2., 15.] # 10295224 copying parameters from p_grid
+#     theta = [-14., -0.9, .5, -1.] # 10295224
+    theta = [-14., .4, .5, -1.] # 10295224
+#     theta = [-14., .4, .5, 5.] # 10295224 copying parameters from p_grid
 
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
@@ -81,7 +83,7 @@ if __name__ == "__main__":
     sampler.run_mcmc(p0, 1500)
 
     print("Making triangle plots")
-    fig_labels = ["$A$", "$P$", "$l_1$", "$l_2$"]
+    fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$"]
     fig = triangle.corner(np.exp(sampler.flatchain), truths=np.exp(theta), labels=fig_labels[:len(theta)])
     fig.savefig("triangle_linear.png")
     fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])

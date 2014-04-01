@@ -32,15 +32,18 @@ if __name__ == "__main__":
     # Load real data
     x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
 
+    # shorten data
     l = 300.
     x = x[:l]
     y = y[:l]
     yerr = yerr[:l]
+
+    # median normalise
     yerr /= np.median(y)
     y = y/np.median(y) -1
 
     # generate fake data
-    pars = [-14., .4, .5, -1., 2.3]
+    pars = [-14., .4, .5, -1., -2.3]
     y = synthetic_data(x, yerr, pars)
 
     # initial hyperparameters (logarithmic)
@@ -48,7 +51,6 @@ if __name__ == "__main__":
     theta = [-14., .4, .5, -1., -2.3] # 10295224
 
     pl.clf()
-#     yerr = np.ones_like(y)*theta[4]
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
     xs = np.linspace(min(x), max(x), 500)
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')

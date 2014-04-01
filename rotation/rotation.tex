@@ -120,4 +120,9 @@ If we don't allow white noise to be inferred from the data and just use the quot
 i.e. $l_1$, the parameter controlling the squared exponential fall-off wants to be very small.
 When making $l_1$ very large, the squared exp term gets very small and the predictive mean looks very periodic.
 
+When generating a synthetic lightcurve and setting initial hyperparameters to be exactly the same, you get beautiful convergence.
+(Is this TOTALLY obvious?)
+
+I think one needs to use a global optimiser first to find the initial hyperparameters.
+
 \end{document}

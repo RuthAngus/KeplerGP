@@ -8,6 +8,7 @@ import emcee
 import triangle
 from load_dataGP import load
 from synth import synthetic_data
+import scipy.optimize as so
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
@@ -51,6 +52,14 @@ if __name__ == "__main__":
     # A, P, l2 (sin), l1 (exp)
     theta = [-14., 2., .0, .0, 1.] # 10295224
 
+    # optimise hyperparameters to find right ball-park
+    print "optimising.."
+    neglnlike = -lnlike
+    pars = so.fmin(neglnlike, theta, args = (x, y, yerr))
+    print pars
+    raw_input('enter')
+
+    # plot data
     pl.clf()
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
     xs = np.linspace(min(x), max(x), 500)

@@ -36,19 +36,19 @@ if __name__ == "__main__":
     x = x[:l]
     y = y[:l]
     yerr = yerr[:l]
+    yerr /= np.median(y)
+    y = y/np.median(y) -1
 
     # generate fake data
     pars = [-14., .4, .5, -1., 2.3]
     y = synthetic_data(x, yerr, pars)
 
-    yerr /= np.median(y)
-    y = y/np.median(y) -1
-
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [-14., .4, .5, -1., 2.3] # 10295224
+    theta = [-14., .4, .5, -1., -2.3] # 10295224
 
     pl.clf()
+#     yerr = np.ones_like(y)*theta[4]
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
     xs = np.linspace(min(x), max(x), 500)
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
@@ -98,6 +98,7 @@ if __name__ == "__main__":
 
     # plot mcmc result
     pl.clf()
+#     yerr = np.ones_like(theta[4])
     pl.errorbar(x, y, yerr=yerr, fmt='k.')
     xs = np.arange(min(x), max(x), 0.01)
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')

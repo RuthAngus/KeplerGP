@@ -9,6 +9,7 @@ import triangle
 from load_dataGP import load
 from synth import synthetic_data
 import scipy.optimize as so
+import time
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
@@ -52,12 +53,12 @@ if __name__ == "__main__":
     # A, P, l2 (sin), l1 (exp)
     theta = [-14., 2., .0, .0, 1.] # 10295224
 
-    # optimise hyperparameters to find right ball-park
-    print "optimising.."
-    neglnlike = -lnlike
-    pars = so.fmin(neglnlike, theta, args = (x, y, yerr))
-    print pars
-    raw_input('enter')
+#     # optimise hyperparameters to find right ball-park
+#     print "optimising.."
+#     neglnlike = -lnlike
+#     pars = so.fmin(neglnlike, theta, args = (x, y, yerr))
+#     print pars
+#     raw_input('enter')
 
     # plot data
     pl.clf()
@@ -66,10 +67,11 @@ if __name__ == "__main__":
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
     pl.xlabel('time (days)')
     pl.savefig('data')
-    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
+    start = time.clock()
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
+    print 'time =', (time.clock() - start)
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)

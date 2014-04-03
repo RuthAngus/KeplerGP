@@ -9,6 +9,7 @@ import triangle
 from load_dataGP import load
 from synth import synthetic_data
 import scipy.optimize as so
+import time
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
@@ -46,22 +47,12 @@ if __name__ == "__main__":
     y = y-np.median(y)
 
     # generate fake data
-#     pars = [-14., 0., .5, .5, .7]
-    pars = [1., 0., 1., .5, 1.]
+    pars = [11., 0., .5, .5, 1.]
     y = synthetic_data(x, yerr, pars)
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-#     theta = [-14., 0., .5, .5, .7]
-    theta = [1., 0., 1., .5, 1.]
-#     theta = [-14., 2., .0, .0, 1.] # 10295224
-
-#     # optimise hyperparameters to find right ball-park
-#     print "optimising.."
-#     neglnlike = -lnlike
-#     pars = so.fmin(neglnlike, theta, args = (x, y, yerr))
-#     print pars
-#     raw_input('enter')
+    theta = [11., 0., .5, .5, 1.]
 
     # plot data
     pl.clf()
@@ -72,17 +63,19 @@ if __name__ == "__main__":
     pl.savefig('data')
 
     print "Initial parameters = (exp)", theta
+    start = time.clock()
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
+    print 'time =', (time.clock() - start)
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
     print("Burn-in")
-    p0, lp, state = sampler.run_mcmc(p0, 2000)
-#     sampler.reset()
-#     print("Production run")
-#     sampler.run_mcmc(p0, 1500)
+    p0, lp, state = sampler.run_mcmc(p0, 100)
+    sampler.reset()
+    print("Production run")
+    sampler.run_mcmc(p0, 1000)
 
     print("Making triangle plots")
     fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$", "$s$"]
@@ -120,18 +113,18 @@ if __name__ == "__main__":
     pl.xlabel('time (days)')
     pl.savefig('result')
 
-    # Grid over periods
-    P = np.arange(0.1, 5, 0.01)
-    P = np.log(P)
-    L = np.empty_like(P)
-
-    for i, per in enumerate(P):
-        theta[1] = per
-        L[i] = lnlike(theta, x, y, yerr)
-
-    P = np.exp(P)
-    pl.clf()
-    pl.plot(P, np.log(L), 'k-')
-    pl.xlabel('Period (days)')
-    pl.ylabel('likelihood')
-    pl.savefig('likelihood')
+#     # Grid over periods
+#     P = np.arange(0.1, 5, 0.01)
+#     P = np.log(P)
+#     L = np.empty_like(P)
+#
+#     for i, per in enumerate(P):
+#         theta[1] = per
+#         L[i] = lnlike(theta, x, y, yerr)
+#
+#     P = np.exp(P)
+#     pl.clf()
+#     pl.plot(P, np.log(L), 'k-')
+#     pl.xlabel('Period (days)')
+#     pl.ylabel('likelihood')
+#     pl.savefig('likelihood')

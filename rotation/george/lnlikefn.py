@@ -25,18 +25,19 @@ def QP(X1, X2, yerr, theta, wn=False):
 #     Kinv = np.linalg.inv( K )
 #     return np.dot(Ks, np.linalg.solve(K, y)), None
 
-def Cmat(x yerr, theta):
-    theta = np.exp(theta)
-    k = theta[0]*ExpSine2Kernel(theta[2], theta[1]) * ExpSquaredKernel(theta[3])
-    gp = george.GaussianProcess(k)
-    j2 = np.exp(2*theta[4])
-    return gp.compute(x, np.sqrt(yerr**2 + j2))
+# def Cmat(x, yerr, theta):
+#     theta = np.exp(theta)
+#     k = theta[0]*ExpSine2Kernel(theta[2], theta[1]) * ExpSquaredKernel(theta[3])
+#     gp = george.GaussianProcess(k)
+# #     j2 = np.exp(2*theta[4])
+#     j2 = np.exp(np.log(theta[4])*2)
+#     return gp.compute(x, np.sqrt(yerr**2 + j2))
 
 def lnlike(theta, x, y, yerr):
     theta = np.exp(theta)
     k = theta[0]*ExpSine2Kernel(theta[2], theta[1]) * ExpSquaredKernel(theta[3])
     gp = george.GaussianProcess(k)
-    j2 = np.exp(2*theta[4])
+    j2 = np.exp(2)*theta[4]
     gp.compute(x, np.sqrt(yerr**2 + j2))
     return gp.lnlikelihood(y)
 
@@ -44,7 +45,6 @@ def predict(xs, x, y, yerr, theta):
     theta = np.exp(theta)
     k = theta[0]*ExpSine2Kernel(theta[2], theta[1]) * ExpSquaredKernel(theta[3])
     gp = george.GaussianProcess(k)
-    j2 = np.exp(2*theta[4])
+    j2 = np.exp(2)*theta[4]
     gp.compute(x, np.sqrt(yerr**2 + j2))
     return gp.predict(y, xs)
-

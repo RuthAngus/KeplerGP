@@ -40,17 +40,20 @@ if __name__ == "__main__":
     y = y[:l]
     yerr = yerr[:l]
 
-    # median normalise
-    yerr /= np.median(y)
-    y = y/np.median(y) -1
+    # normalise so range is 2 - no idea if this is the right thing to do...
+    yerr = 2*yerr/(max(y)-min(y))
+    y = 2*y/(max(y)-min(y))
+    y = y-np.median(y)
 
     # generate fake data
-    pars = [-14., 0., .5, .5, .7]
+#     pars = [-14., 0., .5, .5, .7]
+    pars = [1., 0., 1., .5, 1.]
     y = synthetic_data(x, yerr, pars)
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [-14., 0., .5, .5, .7]
+#     theta = [-14., 0., .5, .5, .7]
+    theta = [1., 0., 1., .5, 1.]
 #     theta = [-14., 2., .0, .0, 1.] # 10295224
 
 #     # optimise hyperparameters to find right ball-park
@@ -67,8 +70,6 @@ if __name__ == "__main__":
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
     pl.xlabel('time (days)')
     pl.savefig('data')
-    print predict(xs, x, y, yerr, theta)
-    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"

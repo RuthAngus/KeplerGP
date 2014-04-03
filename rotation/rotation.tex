@@ -52,7 +52,7 @@ The popularity of GPs is growing within time domain astronomy now that fast GP m
 We use a GP to model stellar variability in Kepler light curves.
 
 The kernel function parameterises the covariance matrix.
-The only requirement for a kernel function to be valid is that it produces a kernel function that is symmetric and positive semi-definite.
+The only requirement for a kernel function to be valid is that it produces a kernel function that is symmetric and positive definite.
 Some examples of commonly used kernel functions include the squared exponential:
 
 \begin{equation}
@@ -109,6 +109,10 @@ We use the method for fast determinant calculation described in (Sivaram et al, 
 The determinant calculation then scales like $\mathcal{O}(N\log^2{N})$.
 %Circulant method scales as $N\log{N}$.
 
+This method decomposes the covariance matrix into
+
+We use george (CITE DAN), a fast Gaussian-process package.
+
 \section{Future work}
 
 Figure out how to join quarters together with a GP?
@@ -124,5 +128,7 @@ When generating a synthetic lightcurve and setting initial hyperparameters to be
 (Is this TOTALLY obvious?)
 
 I think one needs to use a global optimiser first to find the initial hyperparameters.
+
+Next step is to get george working!
 
 \end{document}

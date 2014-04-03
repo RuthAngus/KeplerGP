@@ -46,13 +46,13 @@ if __name__ == "__main__":
     y = 2*y/(max(y)-min(y))
     y = y-np.median(y)
 
-    # generate fake data
-    pars = [11., 0., .5, .5, 1.]
-    y = synthetic_data(x, yerr, pars)
+#     # generate fake data
+#     pars = [11., 0., .5, .5, 1.]
+#     y = synthetic_data(x, yerr, pars)
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [11., 0., .5, .5, 1.]
+    theta = [7., 0., .5, .5, 1.]
 
     # plot data
     pl.clf()
@@ -61,21 +61,28 @@ if __name__ == "__main__":
     pl.plot(xs, predict(xs, x, y, yerr, theta)[0], 'r-')
     pl.xlabel('time (days)')
     pl.savefig('data')
+    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
     start = time.clock()
     print "Initial lnlike = ", lnlike(theta, x, y, yerr),"\n"
-    print 'time =', (time.clock() - start)
+    elapsed = (time.clock() - start)
+    print 'time =', elapsed
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
+    bi, pr = 100, 1000
+    print 'predicted time = ', (elapsed*bi+elapsed*pr)/60., 'mins'
+    start = time.clock()
     print("Burn-in")
     p0, lp, state = sampler.run_mcmc(p0, 100)
     sampler.reset()
     print("Production run")
     sampler.run_mcmc(p0, 1000)
+    elapsed = time.clock() - start
+    print 'time = ', elapsed
 
     print("Making triangle plots")
     fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$", "$s$"]

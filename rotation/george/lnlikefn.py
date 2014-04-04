@@ -30,3 +30,10 @@ def predict(xs, x, y, yerr, theta):
 #     gp.compute(x, np.sqrt(yerr**2 + j2))
     gp.compute(x, (theta[4]*yerr**2))
     return gp.predict(y, xs)
+
+def neglnlike(theta, x, y, yerr):
+    theta = np.exp(theta)
+    k = theta[0]*ExpSine2Kernel(theta[2], theta[1]) * ExpSquaredKernel(theta[3])
+    gp = george.GaussianProcess(k)
+    gp.compute(x, (theta[4]*yerr**2))
+    return -gp.lnlikelihood(y)

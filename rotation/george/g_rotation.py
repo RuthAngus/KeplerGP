@@ -1,7 +1,7 @@
 import numpy as np
 import pyfits
 import matplotlib.pyplot as pl
-from lnlikefn import lnlike, predict
+from lnlikefn import lnlike, predict, neglnlike
 import emcee
 import triangle
 from load_dataGP import load
@@ -56,11 +56,18 @@ if __name__ == "__main__":
 #     yerr /= np.median(y)
 #     y = y/np.median(y) -1
 
+    theta_init = [0.1, .3, .6, .4, 6.5] # better parameterisation
+    # optimise hyperparameters to find right ball-park
+    print "optimising.."
+    ml_theta = so.fmin(neglnlike, theta_init, args = (x, y, yerr))
+    print 'max likelihood theta = ', ml_theta
+
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
 #     theta = pars # same as pars
 #     theta = [0., 0, .5, .5, 0.] # inital try
     theta = [0., .2, .5, .5, 6.2] # better parameterisation
+    theta = ml_theta
 
     # plot data
     pl.clf()

@@ -50,7 +50,7 @@ if __name__ == "__main__":
 #     y = y-np.median(y)
 
     # generate fake data
-    pars = [1., 0., .5, .5, np.log(2)]
+    pars = [1., 0., .5, .5, 3]
     yerr = np.ones_like(y)*0.01
     y = simple_s_data(x, yerr, pars)
 

@@ -13,7 +13,7 @@ import time
 def lnprior(theta):
 #     if -16.<theta[0]<10. and -.1<theta[1]<3. and -6.<theta[2]<10. and -6.<theta[3]<16.\
     if -16.<theta[0]<12. and -2.<theta[1]<3. and -2.<theta[2]<2. and -2.<theta[3]<2.\
-            and -1.<theta[4]<11.:
+            and -16.<theta[4]<16.:
         return 0.0
     return -np.inf
 
@@ -39,25 +39,28 @@ if __name__ == "__main__":
     y = y[:l]
     yerr = yerr[:l]
 
+    # median normalise
+    yerr /= np.median(y)
+    y = y/np.median(y) -1
+
 #     # normalise so range is 2 - no idea if this is the right thing to do...
 #     yerr = 2*yerr/(max(y)-min(y))
+#     print yerr
 #     y = 2*y/(max(y)-min(y))
 #     y = y-np.median(y)
+
+    # generate fake data
+    pars = [1., 0., .5, .5, np.log(2)]
+    yerr = np.ones_like(y)*0.01
+    y = simple_s_data(x, yerr, pars)
 
     # median normalise
     yerr /= np.median(y)
     y = y/np.median(y) -1
 
-    # generate fake data
-    pars = [10., 0., .5, .5, 4.]
-#     y, yerr = synthetic_data(x, yerr, pars)
-    y, yerr = simple_s_data(x, yerr, pars)
-
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [10., 0., .5, .5, 4.] # same as pars
-#     theta = [7., 0., .5, .5, 1.] # initial
-#     theta = [-1., .3, .5, .5, 1.] # better initialisation
+    theta = pars # same as pars
 
     # plot data
     pl.clf()

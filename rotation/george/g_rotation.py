@@ -39,28 +39,28 @@ if __name__ == "__main__":
     y = y[:l]
     yerr = yerr[:l]
 
-    # median normalise
-    yerr /= np.median(y)
-    y = y/np.median(y) -1
+#     # median normalise
+#     yerr /= np.median(y)
+#     y = y/np.median(y) -1
 
-#     # normalise so range is 2 - no idea if this is the right thing to do...
-#     yerr = 2*yerr/(max(y)-min(y))
-#     print yerr
-#     y = 2*y/(max(y)-min(y))
-#     y = y-np.median(y)
+    # normalise so range is 2 - no idea if this is the right thing to do...
+    yerr = 2*yerr/(max(y)-min(y))
+    y = 2*y/(max(y)-min(y))
+    y = y-np.median(y)
 
-    # generate fake data
-    pars = [1., 0., .5, .5, 3]
-    yerr = np.ones_like(y)*0.01
-    y = simple_s_data(x, yerr, pars)
-
-    # median normalise
-    yerr /= np.median(y)
-    y = y/np.median(y) -1
+#     # generate fake data
+#     pars = [1., 0., .5, .5, 3]
+#     yerr = np.ones_like(y)*0.01
+#     y = simple_s_data(x, yerr, pars)
+#     # median normalise
+#     yerr /= np.median(y)
+#     y = y/np.median(y) -1
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = pars # same as pars
+#     theta = pars # same as pars
+#     theta = [0., 0, .5, .5, 0.] # inital try
+    theta = [0., .2, .5, .5, 6.2] # better parameterisation
 
     # plot data
     pl.clf()
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
-    bi, pr = 100, 1000
+    bi, pr = 500, 1000
 #     print 'predicted time = ', (elapsed*bi+elapsed*pr)
     start = time.clock()
     print("Burn-in")

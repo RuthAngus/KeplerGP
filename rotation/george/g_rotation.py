@@ -1,13 +1,11 @@
 import numpy as np
 import pyfits
-# from savefig import monkey_patch
-# monkey_patch()
 import matplotlib.pyplot as pl
 from lnlikefn import lnlike, predict
 import emcee
 import triangle
 from load_dataGP import load
-from synth import synthetic_data
+from synth import synthetic_data, simple_s_data
 import scipy.optimize as so
 import time
 
@@ -15,7 +13,7 @@ import time
 def lnprior(theta):
 #     if -16.<theta[0]<10. and -.1<theta[1]<3. and -6.<theta[2]<10. and -6.<theta[3]<16.\
     if -16.<theta[0]<12. and -2.<theta[1]<3. and -2.<theta[2]<2. and -2.<theta[3]<2.\
-            and -1.<theta[4]<2.:
+            and -1.<theta[4]<11.:
         return 0.0
     return -np.inf
 
@@ -41,18 +39,25 @@ if __name__ == "__main__":
     y = y[:l]
     yerr = yerr[:l]
 
-    # normalise so range is 2 - no idea if this is the right thing to do...
-    yerr = 2*yerr/(max(y)-min(y))
-    y = 2*y/(max(y)-min(y))
-    y = y-np.median(y)
+#     # normalise so range is 2 - no idea if this is the right thing to do...
+#     yerr = 2*yerr/(max(y)-min(y))
+#     y = 2*y/(max(y)-min(y))
+#     y = y-np.median(y)
 
-#     # generate fake data
-#     pars = [11., 0., .5, .5, 1.]
-#     y = synthetic_data(x, yerr, pars)
+    # median normalise
+    yerr /= np.median(y)
+    y = y/np.median(y) -1
+
+    # generate fake data
+    pars = [10., 0., .5, .5, 4.]
+#     y, yerr = synthetic_data(x, yerr, pars)
+    y, yerr = simple_s_data(x, yerr, pars)
 
     # initial hyperparameters (logarithmic)
     # A, P, l2 (sin), l1 (exp)
-    theta = [7., 0., .5, .5, 1.]
+    theta = [10., 0., .5, .5, 4.] # same as pars
+#     theta = [7., 0., .5, .5, 1.] # initial
+#     theta = [-1., .3, .5, .5, 1.] # better initialisation
 
     # plot data
     pl.clf()
@@ -74,15 +79,15 @@ if __name__ == "__main__":
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr))
     bi, pr = 100, 1000
-    print 'predicted time = ', (elapsed*bi+elapsed*pr)/60., 'mins'
+#     print 'predicted time = ', (elapsed*bi+elapsed*pr)
     start = time.clock()
     print("Burn-in")
-    p0, lp, state = sampler.run_mcmc(p0, 100)
+    p0, lp, state = sampler.run_mcmc(p0, bi)
     sampler.reset()
     print("Production run")
-    sampler.run_mcmc(p0, 1000)
+    sampler.run_mcmc(p0, pr)
     elapsed = time.clock() - start
-    print 'time = ', elapsed
+    print 'time = ', elapsed/60., 'mins'
 
     print("Making triangle plots")
     fig_labels = ["$A$", "$P$", "$l_2$", "$l_1$", "$s$"]

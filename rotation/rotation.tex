@@ -20,31 +20,41 @@ Periodogram and wavelet based methods are not suitable for quasi-periodic, non-s
 They often cannot distinguish between 'true' periods and harmonics and tend to fail in cases where systematics dominate or substantially contribute to the signal.
 The autocorrelation function (ACF) method, (McQuillan et al, 2012) \emph{is} able to distinguish a true period from its harmonics in most cases and is well adapted to quasi-periodic, non-sinusiodal signals.
 However, in general it requires heuristics --- hand-tuned, non-motivated-by-science parameters, to determine the `reliability' of a rotation period measurement.
-General practise within the field is to use the ACF method, or some combination of periodogram and wavelets. % is this true?
+General practise within the field is to use the ACF method, or some combination of ACF, periodogram and wavelets. % is this true?
 The major drawback to all of the methods listed above, is that uncertainties on rotation periods are difficult to quantify.
-The ideal method for measuring stellar rotation periods would be to use a physically-motivated model and fit for its parameters.
-Unfortunately, the physics driving the production of variability in stellar light curves is poorly understood and parameters in existing spots models are highly degenerate.
+The ideal method for measuring stellar rotation periods would be to use a physically-motivated model and explore the posterior probability distribution of each of its parameters.
+Unfortunately, the physics driving the production of variability in stellar light curves is poorly understood and parameters in existing spots models are degenerate.
 In particular, spot lifetime and differential rotation (shear) are highly degenerate.
 In the absence of a well-motivated physical model, we opt to use a highly flexible, semi-parametric model: a Gaussian process (GP).
-It is semi-parametric because its parameters do not apply to the light curve itself, but to the properties of the covariance structure of the light curve.
-A GP model can cope with quasi-periodic, non-sinusoidal signals, it can model systematics and physical signals simultaneously and provides rotation period measurements with well estimated uncertainties.
+The parameters of a GP do not apply to the light curve itself, but to the properties of its covariance structure.
+% It is semi-parametric because its parameters do not apply to the light curve itself, but to the properties of the covariance structure of the light curve.
+A GP model can cope with quasi-periodic, non-sinusoidal signals, it can model noise and physical signals simultaneously and provides rotation period measurements with well estimated uncertainties.
+
 
 \end{abstract}
 
 \section{Introduction}
 
+\subsection{Stellar rotation}
+
 Thanks to the high-precision photometry provided by Kepler, stellar rotation periods can be measured directly from light curves.
 % Spotted, rotating stars produce variable light curves due to the repeated
 The nature of this variability tends to be non-sinusoidal --- star spot patterns are irregular.
-Stars do not rotate as solid bodys --- they have different rotation periods at different latitudes.
-The rotation period of whatever annulus upon which the most dominant spot region lies will show up in the light curve.
-Sun spots are born at mid-latitudes and migrate towards the equator.
-If this is also assumed to happen in solar-type stars, this effect will make the stellar rotation period seem to vary.
-In general it is also quasi-periodic: stars
+Stars often do not rotate as solid bodys, they have differential rotation.
+The rotation period of the dominant active region on the stellar surface will show up in the light curve, however this period might not reflect the equatorial rotation period of the star.
+Sun spots are born at mid-latitudes and migrate towards the equator, producing the `butterfly diagram' for the sun.
+This same effect is seen in stars --- rotation periods do not stay constant, but evolve as if active regions are drifting across latitudes on the surface of a differentially rotating star.
+% Stars do not rotate as solid bodys, they have different rotation periods at different latitudes.
+% The rotation period of whatever annulus upon which the most dominant spot region lies will show up in the light curve.
+% Sun spots are born at mid-latitudes and migrate towards the equator.
+% If this is also assumed to happen in solar-type stars, this effect will make the stellar rotation period seem to vary.
+% In general it is also quasi-periodic: stars
+
+\subsection{Gaussian processes}
 
 A Gaussian process is any stochastic process in which the joint probability distribution over N samples drawn from the process is Gaussian in N dimensions.
 GPs are commonly used in the fields of machine learning, information engineering, biology and cosmology.
-They are now beginning to be used in the field of time domain astronomy (Gibson et al, 2011, Aigrain et al, 2012, Foreman-Mackey et al, 2014).
+They are now beginning to be used in the field of astronomy (Gibson et al, 2011, Aigrain et al, 2012, Foreman-Mackey et al, 2014, PULSAR PEOPLE).
 The popularity of GPs is growing within time domain astronomy now that fast GP methods are being developed (cite Dan's paper), as previously, especially for Kepler data, they have been prohibitively computationally expensive.
 
 \section{Method}
@@ -52,28 +62,27 @@ The popularity of GPs is growing within time domain astronomy now that fast GP m
 We use a GP to model stellar variability in Kepler light curves.
 
 The kernel function parameterises the covariance matrix.
-The only requirement for a kernel function to be valid is that it produces a kernel function that is symmetric and positive definite.
-Some examples of commonly used kernel functions include the squared exponential:
+One of the most commonly used kernel functions is the squared exponential:
 
 \begin{equation}
 	k_{ij} = A\exp\left[{\frac{-(x_i-x_j)}{2l^2}}\right]
 \end{equation}
 
-which is the simplest kernel you can write down --- it has only two parameters, an amplitude, A and a length scale, l.
+which is the simplest kernel you can write down --- it has only two parameters, an amplitude, A and a length scale, $l$.
 The length scale parameter controls the rate at which the covariance between data points falls away.
 Large $l$ will produce a slowly varying mean function where points are correlated with many surrounding data points.
 Small $l$ will produce a rapidly varying mean function, where data points are only correlated with their immediate neighbours.
 
-Kernel functions can be periodic,  --- a simple periodic function might look like the following:
+Kernel functions can be periodic --- a simple periodic function might look like the following:
 
 \begin{equation}
 	k_{ij} = A\exp\left[{\frac{-\sin^2\left({\frac{\pi(x_i-x_j)}{P}}\right)}{L^2}}\right],
 \end{equation}
 
 where P is the period and L is something like a characteristic length scale in phase-space.
-This periodic kernel function parameterises the covariance between points of the same phase; only points with similar phases will be highly correlated.
+This periodic kernel function parameterises the covariance between points of the same phase: only points with similar phases will be highly correlated.
 
-Kernel functions have the fantastic property that they can be added or multiplied together to produce other valid kernel functions.
+Kernel functions can be added or multiplied together to produce other valid kernel functions.
 To construct our quasi-periodic kernel function we multiply a simple periodic kernel with a squared exponential,
 
 \begin{equation}
@@ -89,6 +98,28 @@ Given a data set, $\mathbf{x_n} = {x_1, x_2, ..., x_n}$, $\mathbf{y_n} = {y_1, y
 where K is the covariance matrix, constructed from $\mathbf{x_n}$ and the selected covariance kernel.
 
 \subsection{Sampling the Posterior}
+
+\subsection{Dealing with the multi-modality}
+
+Figure \ref{fig:fixed_period} shows the posteriors of the three non-periodic parameters: $l_1$, $l_2$ and $A$, when $P$ is held fixed.
+Clearly, these three parameters do not have multi-modal posteriors.
+The period parameter, on the other hand, does.
+One would expect period to have a multi-modal posterior since period values at harmonics and aliases of the true period will have higher probability than surrounding regions.
+This introduces a problem --- it is very difficult to sample from multi-modal posteriors, MCMC walkers tend to get `stuck' in regions of high probability and the chains will not converge.
+To get around this problem we could sample over a grid (or use importance sampling) in period, running an MCMC over the other three parameters at each value of period.
+Alternatively we could use nested sampling.
+For the moment we have tried setting the walkers off at evenly spaced positions in period.
+The next thing to try will be to grid over the periods.
+
+there is still something not quite right - the mean function doesn't seem to return to zero.... I fear this may cause problems...
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width=6in, clip=true, trim=0 0 0.5in 0]{/Users/angusr/Python/KeplerGP/rotation/old_figs/success.png}
+\caption{Posterior distributions for the three non-periodic parameters, when $P$ is held fixed.}
+\label{fig:fixed_period}
+\end{center}
+\end{figure}
 
 \subsection{Computational tractability}
 
@@ -109,8 +140,7 @@ We use the method for fast determinant calculation described in (Sivaram et al, 
 The determinant calculation then scales like $\mathcal{O}(N\log^2{N})$.
 %Circulant method scales as $N\log{N}$.
 
-This method decomposes the covariance matrix into
-
+By hierarchically factoring the matrix into a product of block low-rank updates of the identity matrix, the inversion is reduced to $\mathcal{O}nlog^2n$ and the determinant calculation to $\mathcal{O}nlogn$.
 We use george (CITE DAN), a fast Gaussian-process package.
 
 \section{Future work}
@@ -124,11 +154,8 @@ If we don't allow white noise to be inferred from the data and just use the quot
 i.e. $l_1$, the parameter controlling the squared exponential fall-off wants to be very small.
 When making $l_1$ very large, the squared exp term gets very small and the predictive mean looks very periodic.
 
-When generating a synthetic lightcurve and setting initial hyperparameters to be exactly the same, you get beautiful convergence.
-(Is this TOTALLY obvious?)
-
-I think one needs to use a global optimiser first to find the initial hyperparameters.
-
-Next step is to get george working!
+Tried starting the walkers in spread out positions for the period parameter.
+It's possible that this has not worked, although I can't really remember!
+Could try checking commit history when I get online.
 
 \end{document}

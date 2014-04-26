@@ -53,9 +53,8 @@ This same effect is seen in stars --- rotation periods do not stay constant, but
 \subsection{Gaussian processes}
 
 A Gaussian process is any stochastic process in which the joint probability distribution over N samples drawn from the process is Gaussian in N dimensions.
-GPs are commonly used in the fields of machine learning, information engineering, biology and cosmology.
-They are now beginning to be used in the field of astronomy (Gibson et al, 2011, Aigrain et al, 2012, Foreman-Mackey et al, 2014, PULSAR PEOPLE).
-The popularity of GPs is growing within time domain astronomy now that fast GP methods are being developed (cite Dan's paper), as previously, especially for Kepler data, they have been prohibitively computationally expensive.
+GPs are commonly used in a wide range of scientific fields, such as machine learning, information engineering, biology and cosmology and are now being used more and more in the field of astronomy (Gibson et al, 2011, Aigrain et al, 2012, Foreman-Mackey et al, 2014, PULSAR PEOPLE).
+The popularity of GPs is growing within time domain astronomy now that fast GP methods are being developed (cite Dan's paper), as previously, especially densely sampled time series like Kepler data, they have been prohibitively computationally expensive.
 
 \section{Method}
 
@@ -106,10 +105,11 @@ Clearly, these three parameters do not have multi-modal posteriors.
 The period parameter, on the other hand, does.
 One would expect period to have a multi-modal posterior since period values at harmonics and aliases of the true period will have higher probability than surrounding regions.
 This introduces a problem --- it is very difficult to sample from multi-modal posteriors, MCMC walkers tend to get `stuck' in regions of high probability and the chains will not converge.
-To get around this problem we could sample over a grid (or use importance sampling) in period, running an MCMC over the other three parameters at each value of period.
-Alternatively we could use nested sampling.
+To get around this problem we could sample over a grid in period, running an MCMC over the other three parameters at each value of period.
+Alternatively we could try something like nested sampling.
 For the moment we have tried setting the walkers off at evenly spaced positions in period.
-The next thing to try will be to grid over the periods.
+
+Think about how you want to index the names of files and plots, etc!
 
 there is still something not quite right - the mean function doesn't seem to return to zero.... I fear this may cause problems...
 
@@ -135,7 +135,7 @@ Luckily there are some tricks we can employ to speed the process up. %thank god!
 % Decomposing the matrix into smaller matrices, e.g. using a Cholesky decomposition can speed up the process a little.
 In practise, covariance matrices are often sparse and this sparsity can be exploited to speed up these computations.
 For the purposes of measuring stellar rotation in Kepler data, covariance matrices will be relatively dense.
-Subsampling or binning the data could reduce the dimensionality of the GP, however % reason why this isn't as good
+Subsampling or binning the data could reduce the dimensionality of the GP, however the way in which this will affect the final result is not obvious.
 We use the method for fast determinant calculation described in (Sivaram et al, 2014) in which the matrix is decomposed into smaller matrices, etc.
 The determinant calculation then scales like $\mathcal{O}(N\log^2{N})$.
 %Circulant method scales as $N\log{N}$.
@@ -154,8 +154,6 @@ If we don't allow white noise to be inferred from the data and just use the quot
 i.e. $l_1$, the parameter controlling the squared exponential fall-off wants to be very small.
 When making $l_1$ very large, the squared exp term gets very small and the predictive mean looks very periodic.
 
-Tried starting the walkers in spread out positions for the period parameter.
-It's possible that this has not worked, although I can't really remember!
-Could try checking commit history when I get online.
+Try better initialisation
 
 \end{document}

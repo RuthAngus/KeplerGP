@@ -21,7 +21,7 @@ pl.rcParams.update(plotpar)
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-    if -10.<theta[0]<10. and -2.<theta[1]<2. and -2.<theta[2]<2.\
+    if -10.<theta[0]<10. and -10.<theta[1]<10. and -10.<theta[2]<10.\
             and -10.<theta[3]<10.:
         return 0.0
     return -np.inf
@@ -109,7 +109,8 @@ if __name__ == "__main__":
     y = 2*y/(max(y)-min(y))
     y = y-np.median(y)
 
-    theta, P = [0., .2, .2, 1.], 1.7
+#     theta, P = [0., .2, .2, 1.], 1.7 # initial
+    theta, P = [-2., -2., -1.2, 6.], 1.7 # better initialisation
 
     # plot data
     pl.clf()

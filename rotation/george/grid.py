@@ -21,8 +21,8 @@ pl.rcParams.update(plotpar)
 
 # flat priors (quasi-periodic)
 def lnprior(theta):
-    if -10.<theta[0]<10. and -10.<theta[1]<10. and -10.<theta[2]<10.\
-            and -10.<theta[3]<10.:
+    if -16.<theta[0]<16. and -16.<theta[1]<16. and -16.<theta[2]<16.\
+            and -16.<theta[3]<16.:
         return 0.0
     return -np.inf
 

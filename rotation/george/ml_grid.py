@@ -63,6 +63,56 @@ def maxlike(theta, x, y, yerr, P, name):
 
     return like
 
+def MCMC(theta, x, y, yerr, P):
+
+    # Sample the posterior probability for m.
+    nwalkers, ndim = 64, len(theta)
+    p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr, P))
+    bi, pr = 100, 500
+    start = time.clock()
+    print("Burn-in")
+    p0, lp, state = sampler.run_mcmc(p0, bi)
+    sampler.reset()
+    print("Production run")
+    sampler.run_mcmc(p0, pr)
+    elapsed = time.clock() - start
+    print 'time = ', elapsed/60., 'mins'
+
+    print("Making triangle plots")
+    fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$"]
+    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+    fig.savefig("%striangle.png"%name)
+
+    print("Plotting traces")
+    pl.figure()
+    for i in range(ndim):
+        pl.clf()
+        pl.axhline(theta[i], color = "r", zorder=2)
+        pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3, zorder=1)
+        pl.savefig("{0}.png".format(i))
+
+    # Flatten chain
+    samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+
+    # Find values
+    mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+                      zip(*np.percentile(samples, [16, 50, 84], axis=0)))
+
+    theta = np.array(mcmc_result)[:, 0]
+    print 'mcmc result = ', theta
+
+    like = lnlike(theta, x, y, yerr, P)
+    print "Final lnlike = ", like
+
+    # plot mcmc result
+    pl.clf()
+    pl.errorbar(x, y, yerr=yerr, fmt='k.')
+    xs = np.arange(min(x), max(x), 0.01)
+    pl.plot(xs, predict(xs, x, y, yerr, theta, P)[0], 'r-')
+    pl.xlabel('time (days)')
+    pl.savefig('result')
+
 if __name__ == "__main__":
     # Load real data
     x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
@@ -122,3 +172,6 @@ if __name__ == "__main__":
     pl.savefig('ml_likelihood')
 
     np.savetxt('ml_results.txt', np.transpose((Periods, L)))
+
+#     mlp = Periods[L == max(L)]
+#     MCMC(theta, x, y, yerr, mlp)

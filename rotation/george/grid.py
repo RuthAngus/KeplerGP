@@ -38,13 +38,13 @@ def lnprob(theta, x, y, yerr, P):
         raise
 
 # run the mcmc over a range of period values
-def MCMC(theta, x, y, yerr, P):
+def MCMC(theta, x, y, yerr, P, name):
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr, P))
-    bi, pr = 100, 500
+    bi, pr = 100, 300
     start = time.clock()
     print("Burn-in")
     p0, lp, state = sampler.run_mcmc(p0, bi)
@@ -56,10 +56,8 @@ def MCMC(theta, x, y, yerr, P):
 
     print("Making triangle plots")
     fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$"]
-    fig = triangle.corner(np.exp(sampler.flatchain), truths=np.exp(theta), labels=fig_labels[:len(theta)])
-    fig.savefig("triangle_linear.png")
     fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
-    fig.savefig("triangle.png")
+    fig.savefig("%striangle.png"%name)
 
     print("Plotting traces")
     pl.figure()
@@ -80,7 +78,8 @@ def MCMC(theta, x, y, yerr, P):
     print 'mcmc result (exp) = ', np.exp(theta)
     print 'mcmc result (lin) = ', theta
 
-    print "Final lnlike = ", lnlike(theta, x, y, yerr, P)
+    like = lnlike(theta, x, y, yerr, P)
+    print "Final lnlike = ", like
 
     # plot mcmc result
     pl.clf()
@@ -88,11 +87,14 @@ def MCMC(theta, x, y, yerr, P):
     xs = np.arange(min(x), max(x), 0.01)
     pl.plot(xs, predict(xs, x, y, yerr, theta, P)[0], 'r-')
     pl.xlabel('time (days)')
-    print 'P=', np.log10(P)
-    raw_input('enter')
-    pl.savefig('%sresult'%np.log10(P))
+    pl.savefig('%sresult'%name)
 
-    return lnlike(theta, x, y, yerr, P)
+    savedata = np.empty(len(theta)+1)
+    savedata[:len(theta)] = theta
+    savedata[-1] = like
+    np.savetxt('%sresult.txt'%name, savedata)
+
+    return like
 
 if __name__ == "__main__":
     # Load real data
@@ -122,7 +124,6 @@ if __name__ == "__main__":
     pl.ylabel('$\mathrm{Normalised~Flux}$')
     pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
     pl.savefig('data')
-    raw_input('enter')
 
     print "Initial parameters = (exp)", theta
     start = time.clock()
@@ -131,15 +132,22 @@ if __name__ == "__main__":
     print 'time =', elapsed
 
     # Grid over periods
-    Periods = np.arange(0.1, 5, 0.01)
-    L = np.empty_like(Periods)
+    Periods = np.arange(0.2, 5, 0.2)
+    L = np.zeros_like(Periods)
 
     for i, P in enumerate(Periods):
-        L[i] = MCMC(theta, x, y, yerr, P)
-        raw_input('enter')
+        L[i] = MCMC(theta, x, y, yerr, P, i)
+        pl.clf()
+        pl.plot(Periods, L, 'k-')
+        pl.xlabel('Period')
+        pl.ylabel('Likelihood')
+        pl.savefig('update')
+
 
     pl.clf()
     pl.plot(Periods, L, 'k-')
     pl.xlabel('Period')
     pl.ylabel('Likelihood')
     pl.savefig('likelihood')
+
+    np.savetxt('results.txt', np.transpose((Periods, L)))

@@ -46,22 +46,15 @@ def maxlike(theta, x, y, yerr, P, name):
     result = fmin(neglnlike, theta, args = (x, y, yerr, P))
     print 'final values = ', result, P
     like = neglnlike(result, x, y, yerr, P)
-    print 'final nll = ', like
+    print 'final likelihood = ', like
 
-    # plot ml result
-    pl.clf()
-    pl.errorbar(x, y, yerr=yerr, fmt='k.')
-    xs = np.arange(min(x), max(x), 0.01)
-    pl.plot(xs, predict(xs, x, y, yerr, result, P)[0], 'r-')
-    pl.xlabel('time (days)')
-    pl.savefig('%sml_result'%name)
-
-    savedata = np.empty(len(result)+1)
+    savedata = np.empty(len(result)+2)
     savedata[:len(result)] = result
+    savedata[-2] = P
     savedata[-1] = like
     np.savetxt('%sml_result.txt'%name, savedata)
 
-    return like
+    return -like
 
 def MCMC(theta, x, y, yerr, P):
 
@@ -128,9 +121,7 @@ if __name__ == "__main__":
     y = 2*y/(max(y)-min(y))
     y = y-np.median(y)
 
-#     theta, P = [0., .2, .2, 1.], 1.7 # initial
-#     theta, P = [-2., -2., -1.2, 6.], 1.7 # better initialisation
-    theta, P = [-2., -2., -1.2, 1.], 1.7 # generating fake data
+    theta, P = [-2., -2., -1.2, 1.], 15 # generating fake data
 
     # generate fake data
     K = QP(theta, x, yerr, P)
@@ -154,7 +145,7 @@ if __name__ == "__main__":
     print 'time =', elapsed
 
     # Grid over periods
-    Periods = np.arange(0.2, 5, 0.1)
+    Periods = np.arange(1., 30., 2)
     L = np.zeros_like(Periods)
 
     for i, P in enumerate(Periods):
@@ -173,5 +164,5 @@ if __name__ == "__main__":
 
     np.savetxt('ml_results.txt', np.transpose((Periods, L)))
 
-#     mlp = Periods[L == max(L)]
-#     MCMC(theta, x, y, yerr, mlp)
+    mlp = Periods[L == max(L)]
+    MCMC(theta, x, y, yerr, mlp)

@@ -1,7 +1,7 @@
 import numpy as np
 import pyfits
 import matplotlib.pyplot as pl
-from fixed_p_like import lnlike, predict
+from fixed_p_like import lnlike, predict, QP
 import emcee
 import triangle
 from load_dataGP import load
@@ -112,7 +112,12 @@ if __name__ == "__main__":
     y = y-np.median(y)
 
 #     theta, P = [0., .2, .2, 1.], 1.7 # initial
-    theta, P = [-2., -2., -1.2, 6.], 1.7 # better initialisation
+#     theta, P = [-2., -2., -1.2, 6.], 1.7 # better initialisation
+    theta, P = [-2., -2., -1.2, 1.], 1.7 # generating fake data
+
+    # generate fake data
+    K = QP(theta, x, yerr, P)
+    y = np.random.multivariate_normal(np.zeros(len(x)), K)
 
     # plot data
     pl.clf()

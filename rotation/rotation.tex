@@ -154,11 +154,19 @@ If we don't allow white noise to be inferred from the data and just use the quot
 i.e. $l_1$, the parameter controlling the squared exponential fall-off wants to be very small.
 When making $l_1$ very large, the squared exp term gets very small and the predictive mean looks very periodic.
 
-Try better initialisation
-
 Tom's idea - run an optimisation over every period, find the highest likelihood - that should be the global maximum.
 Then run an MCMC with that period fixed.
 Except you want the marginal likelihood...
 So shouldn't I be finding the marginal likelihood right now!?
+Well if it works this way then I guess it'll work Tom's way too.
+
+I still haven't quite seen the correct period being recovered - trying doubling the number of data points to see if I can constrain the period better.
+How will I search for the longer period signals?
+Use a course grid and find the maximum likelihood, then 'hone in' on the maxlike bin.
+Bin that up and repeat the process.
+How many iterations though?
+I guess that will depend on the courseness of the grid.
+When the maxlike period is found, do an MCMC.
+Probably don't want to fix period, but want to have a prior over it so that you are restricted to the local maximum
 
 \end{document}

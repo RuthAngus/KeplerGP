@@ -22,14 +22,14 @@ plotpar = {'axes.labelsize': 20,
 pl.rcParams.update(plotpar)
 
 # flat priors (quasi-periodic)
-def lnprior(theta, b):
+def lnprior(theta, bm, bp):
     if -16.<theta[0]<16. and -16.<theta[1]<16. and -16.<theta[2]<16.\
-            and -16.<theta[3]<16. and theta[4]-(2*b)<theta[4]<theta[4]+(2*b):
+            and -16.<theta[3]<16. and bm<theta[4]<bp:
         return 0.0
     return -np.inf
 
 # posterior prob
-def lnprob(theta, x, y, yerr, b):
+def lnprob(theta, x, y, yerr, bp, bm):
     lp = lnprior(theta, b)
     if not np.isfinite(lp):
         return -np.inf
@@ -49,20 +49,20 @@ def maxlike(theta, x, y, yerr, P, name):
     like = neglnlike(result, x, y, yerr, P)
     print 'final likelihood = ', like
 
-    savedata = np.empty(len(result)+2)
-    savedata[:len(result)] = result
-    savedata[-2] = P
-    savedata[-1] = like
-    np.savetxt('results/%sml_result.txt'%name, savedata)
+#     savedata = np.empty(len(result)+2)
+#     savedata[:len(result)] = result
+#     savedata[-2] = P
+#     savedata[-1] = like
+#     np.savetxt('results/ml_result%s.txt'%name, savedata)
 
     return -like
 
-def MCMC(theta, x, y, yerr, b):
+def MCMC(theta, x, y, yerr, bm, bp):
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr, b))
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr, bm, bp))
     bi, pr = 200, 800
     start = time.clock()
     print("Burn-in")
@@ -119,9 +119,14 @@ if __name__ == "__main__":
         # Load real data
         x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr0%s-2009350155506_llc.fits" %int(KID))
 
-        # shorten data
-        print p_init[k]
-        l = 500.
+        # subsample and truncate data
+        cadence = 48. # number of data points/day
+        npoints = 100. # number of data points needed/period
+        subsamp = int(round(cadence*p_init[k]/npoints))
+        x = x[::subsamp]
+        y = y[::subsamp]
+        yerr = yerr[::subsamp]
+        l = 500. # truncate to 500 data points, total
         x = x[:l]
         y = y[:l]
         yerr = yerr[:l]
@@ -147,8 +152,7 @@ if __name__ == "__main__":
         pl.xlabel('$\mathrm{Time~(days)}$')
         pl.ylabel('$\mathrm{Normalised~Flux}$')
         pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
-        pl.savefig('ml_data')
-        raw_input('enter')
+        pl.savefig('ml_data%s' %int(KID))
 
     #     # plot periodogram
     #     freq, power = periodogram(x)
@@ -164,8 +168,14 @@ if __name__ == "__main__":
         print 'time =', elapsed
 
         # Grid over periods
-        step = 0.01
-        Periods = np.arange(1., 3., step)
+#         step = 0.01
+#         Periods = np.arange(1., 3., step)
+        r = .4
+        mn, mx = p_init[k]-(p_init[k]*r), p_init[k]+(p_init[k]*r)
+        step = (mx-mn)/10.
+        Periods = np.arange(mn, mx, step)
+        print mn, mx, step
+        raw_input('enter')
         L = np.zeros_like(Periods)
 
         for i, P in enumerate(Periods):
@@ -174,22 +184,26 @@ if __name__ == "__main__":
             pl.plot(Periods, L, 'k-')
             pl.xlabel('Period')
             pl.ylabel('Likelihood')
-            pl.savefig('ml_update')
+            pl.savefig('ml_update%s' %int(KID))
 
         pl.clf()
         pl.plot(Periods, L, 'k-')
         pl.xlabel('Period')
         pl.ylabel('Likelihood')
-        pl.savefig('ml_likelihood')
+        pl.savefig('ml_likelihood%s' %int(KID))
 
-        np.savetxt('ml_results.txt', np.transpose((Periods, L)))
+        np.savetxt('ml_results%s.txt' %int(KID), np.transpose((Periods, L)))
 
         mlp = Periods[L == max(L)]
         print 'max liklihood period = ', mlp
+
+        # set period prior boundaries
+        bm = mlp - .1*mlp
+        bp = mlp + .1*mlp
 
         # running MCMC over maxlikelihood period
     #     mlp = 1.41
     #     m = np.empty(len(theta)+1)
     #     m[:len(theta)] = theta
     #     m[-1] = mlp
-    #     MCMC(m, x, y, yerr, b)
+    #     MCMC(m, x, y, yerr, bm, bp)

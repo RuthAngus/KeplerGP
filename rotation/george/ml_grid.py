@@ -108,75 +108,88 @@ def MCMC(theta, x, y, yerr, b):
     pl.savefig('result')
 
 if __name__ == "__main__":
-    # Load real data
-    x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
 
-    # shorten data
-    l = 500.
-    x = x[:l]
-    y = y[:l]
-    yerr = yerr[:l]
+    # Load target list with ACF periods
+    data = np.genfromtxt('/Users/angusr/Python/george/targets.txt').T
+    KIDs = data[0]
+    p_init = data[1]
 
-    # normalise so range is 2 - no idea if this is the right thing to do...
-    yerr = 2*yerr/(max(y)-min(y))
-    y = 2*y/(max(y)-min(y))
-    y = y-np.median(y)
+    for k, KID in enumerate(KIDs):
 
-    theta, P = [-2., -2., -1.2, 1.], 1.7 # generating fake data
+        # Load real data
+        x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr0%s-2009350155506_llc.fits" %int(KID))
 
-    # generate fake data
-    K = QP(theta, x, yerr, P)
-    y = np.random.multivariate_normal(np.zeros(len(x)), K)
+        # shorten data
+        print p_init[k]
+        l = 500.
+        x = x[:l]
+        y = y[:l]
+        yerr = yerr[:l]
 
-    # plot data
-    pl.clf()
-    pl.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='0.5', zorder=2)
-    xs = np.linspace(min(x), max(x), 1000)
-    pl.plot(xs, predict(xs, x, y, yerr, theta, P)[0], color='#339999', linestyle = '-',\
-            zorder=1, linewidth='2')
-    pl.xlabel('$\mathrm{Time~(days)}$')
-    pl.ylabel('$\mathrm{Normalised~Flux}$')
-    pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
-    pl.savefig('ml_data')
+        # normalise so range is 2 - no idea if this is the right thing to do...
+        yerr = 2*yerr/(max(y)-min(y))
+        y = 2*y/(max(y)-min(y))
+        y = y-np.median(y)
 
-    # plot periodogram
-    freq, power = periodogram(x)
-    pl.clf()
-    pl.plot(freq, power)
-    pl.savefig('periodogram')
-    raw_input('enter')
+    #     theta, P = [-2., -2., -1.2, 1.], 1.7 # generating fake data
+        theta, P = [-2., -2., -1.2, 1.], p_init[k]
 
-    print "Initial parameters = (exp)", theta
-    start = time.clock()
-    print "Initial lnlike = ", -neglnlike(theta, x, y, yerr, P),"\n"
-    elapsed = (time.clock() - start)
-    print 'time =', elapsed
+    #     # generate fake data
+    #     K = QP(theta, x, yerr, P)
+    #     y = np.random.multivariate_normal(np.zeros(len(x)), K)
 
-    # Grid over periods
-    b = 0.01
-    Periods = np.arange(1., 3., b)
-    L = np.zeros_like(Periods)
+        # plot data
+        pl.clf()
+        pl.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='0.5', zorder=2)
+        xs = np.linspace(min(x), max(x), 1000)
+        pl.plot(xs, predict(xs, x, y, yerr, theta, P)[0], color='#339999', linestyle = '-',\
+                zorder=1, linewidth='2')
+        pl.xlabel('$\mathrm{Time~(days)}$')
+        pl.ylabel('$\mathrm{Normalised~Flux}$')
+        pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
+        pl.savefig('ml_data')
+        raw_input('enter')
 
-#     for i, P in enumerate(Periods):
-#         L[i] = maxlike(theta, x, y, yerr, P, i)
-#         pl.clf()
-#         pl.plot(Periods, L, 'k-')
-#         pl.xlabel('Period')
-#         pl.ylabel('Likelihood')
-#         pl.savefig('ml_update')
-#
-#     pl.clf()
-#     pl.plot(Periods, L, 'k-')
-#     pl.xlabel('Period')
-#     pl.ylabel('Likelihood')
-#     pl.savefig('ml_likelihood')
-#
-#     np.savetxt('ml_results.txt', np.transpose((Periods, L)))
-#
-#     mlp = Periods[L == max(L)]
-#     print 'max liklihood period = ', mlp
-    mlp = 1.41
-    m = np.empty(len(theta)+1)
-    m[:len(theta)] = theta
-    m[-1] = mlp
-    MCMC(m, x, y, yerr, b)
+    #     # plot periodogram
+    #     freq, power = periodogram(x)
+    #     pl.clf()
+    #     pl.plot(freq, power)
+    #     pl.savefig('periodogram')
+    #     raw_input('enter')
+
+        print "Initial parameters = (exp)", theta
+        start = time.clock()
+        print "Initial lnlike = ", -neglnlike(theta, x, y, yerr, P),"\n"
+        elapsed = (time.clock() - start)
+        print 'time =', elapsed
+
+        # Grid over periods
+        step = 0.01
+        Periods = np.arange(1., 3., step)
+        L = np.zeros_like(Periods)
+
+        for i, P in enumerate(Periods):
+            L[i] = maxlike(theta, x, y, yerr, P, i)
+            pl.clf()
+            pl.plot(Periods, L, 'k-')
+            pl.xlabel('Period')
+            pl.ylabel('Likelihood')
+            pl.savefig('ml_update')
+
+        pl.clf()
+        pl.plot(Periods, L, 'k-')
+        pl.xlabel('Period')
+        pl.ylabel('Likelihood')
+        pl.savefig('ml_likelihood')
+
+        np.savetxt('ml_results.txt', np.transpose((Periods, L)))
+
+        mlp = Periods[L == max(L)]
+        print 'max liklihood period = ', mlp
+
+        # running MCMC over maxlikelihood period
+    #     mlp = 1.41
+    #     m = np.empty(len(theta)+1)
+    #     m[:len(theta)] = theta
+    #     m[-1] = mlp
+    #     MCMC(m, x, y, yerr, b)

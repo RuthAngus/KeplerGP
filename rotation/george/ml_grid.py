@@ -10,6 +10,7 @@ import scipy.optimize as so
 import time
 from matplotlib.ticker import MaxNLocator
 from scipy.optimize import fmin
+from scipy.signal import periodogram
 
 ocols = ['#FF9933','#66CCCC' , '#FF33CC', '#3399FF', '#CC0066', '#99CC99', '#9933FF', '#CC0000']
 plotpar = {'axes.labelsize': 20,
@@ -52,15 +53,11 @@ def maxlike(theta, x, y, yerr, P, name):
     savedata[:len(result)] = result
     savedata[-2] = P
     savedata[-1] = like
-    np.savetxt('/results/%sml_result.txt'%name, savedata)
+    np.savetxt('results/%sml_result.txt'%name, savedata)
 
     return -like
 
-def MCMC(m, x, y, yerr, b):
-
-    theta = np.empty(len(m)+1)
-    theta[:len(theta)] = m
-    theta[-1] = P
+def MCMC(theta, x, y, yerr, b):
 
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
@@ -77,7 +74,7 @@ def MCMC(m, x, y, yerr, b):
     print 'time = ', elapsed/60., 'mins'
 
     print("Making triangle plots")
-    fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$"]
+    fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$", "$P$"]
     fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
     fig.savefig("triangle.png")
 
@@ -115,7 +112,7 @@ if __name__ == "__main__":
     x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr010295224-2009350155506_llc.fits")
 
     # shorten data
-    l = 1000.
+    l = 500.
     x = x[:l]
     y = y[:l]
     yerr = yerr[:l]
@@ -141,6 +138,12 @@ if __name__ == "__main__":
     pl.ylabel('$\mathrm{Normalised~Flux}$')
     pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
     pl.savefig('ml_data')
+
+    # plot periodogram
+    freq, power = periodogram(x)
+    pl.clf()
+    pl.plot(freq, power)
+    pl.savefig('periodogram')
     raw_input('enter')
 
     print "Initial parameters = (exp)", theta
@@ -154,22 +157,26 @@ if __name__ == "__main__":
     Periods = np.arange(1., 3., b)
     L = np.zeros_like(Periods)
 
-    for i, P in enumerate(Periods):
-        L[i] = maxlike(theta, x, y, yerr, P, i)
-        pl.clf()
-        pl.plot(Periods, L, 'k-')
-        pl.xlabel('Period')
-        pl.ylabel('Likelihood')
-        pl.savefig('ml_update')
-
-    pl.clf()
-    pl.plot(Periods, L, 'k-')
-    pl.xlabel('Period')
-    pl.ylabel('Likelihood')
-    pl.savefig('ml_likelihood')
-
-    np.savetxt('ml_results.txt', np.transpose((Periods, L)))
-
-    mlp = Periods[L == max(L)]
-    print 'max liklihood period = ', mlp
-    MCMC(theta, x, y, yerr, b)
+#     for i, P in enumerate(Periods):
+#         L[i] = maxlike(theta, x, y, yerr, P, i)
+#         pl.clf()
+#         pl.plot(Periods, L, 'k-')
+#         pl.xlabel('Period')
+#         pl.ylabel('Likelihood')
+#         pl.savefig('ml_update')
+#
+#     pl.clf()
+#     pl.plot(Periods, L, 'k-')
+#     pl.xlabel('Period')
+#     pl.ylabel('Likelihood')
+#     pl.savefig('ml_likelihood')
+#
+#     np.savetxt('ml_results.txt', np.transpose((Periods, L)))
+#
+#     mlp = Periods[L == max(L)]
+#     print 'max liklihood period = ', mlp
+    mlp = 1.41
+    m = np.empty(len(theta)+1)
+    m[:len(theta)] = theta
+    m[-1] = mlp
+    MCMC(m, x, y, yerr, b)

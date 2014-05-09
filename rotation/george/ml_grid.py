@@ -154,12 +154,13 @@ if __name__ == "__main__":
         pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
         pl.savefig('ml_data%s' %int(KID))
 
-    #     # plot periodogram
-    #     freq, power = periodogram(x)
-    #     pl.clf()
-    #     pl.plot(freq, power)
-    #     pl.savefig('periodogram')
-    #     raw_input('enter')
+        # plot periodogram
+        r = .5
+        freq, power = periodogram(y)
+        pl.clf()
+        pl.plot(1./freq, power)
+        pl.xlim(((1./freq)-(r*1./freq)), ((1./freq)+(r*1./freq)))
+        pl.savefig('periodogram%s' %int(KID))
 
         print "Initial parameters = (exp)", theta
         start = time.clock()
@@ -168,23 +169,19 @@ if __name__ == "__main__":
         print 'time =', elapsed
 
         # Grid over periods
-#         step = 0.01
-#         Periods = np.arange(1., 3., step)
-        r = .4
+        r = .5
         mn, mx = p_init[k]-(p_init[k]*r), p_init[k]+(p_init[k]*r)
-        step = (mx-mn)/10.
+        step = (mx-mn)/20.
         Periods = np.arange(mn, mx, step)
-        print mn, mx, step
-        raw_input('enter')
         L = np.zeros_like(Periods)
 
         for i, P in enumerate(Periods):
             L[i] = maxlike(theta, x, y, yerr, P, i)
-            pl.clf()
-            pl.plot(Periods, L, 'k-')
-            pl.xlabel('Period')
-            pl.ylabel('Likelihood')
-            pl.savefig('ml_update%s' %int(KID))
+#             pl.clf()
+#             pl.plot(Periods, L, 'k-')
+#             pl.xlabel('Period')
+#             pl.ylabel('Likelihood')
+#             pl.savefig('ml_update%s' %int(KID))
 
         pl.clf()
         pl.plot(Periods, L, 'k-')
@@ -198,12 +195,12 @@ if __name__ == "__main__":
         print 'max liklihood period = ', mlp
 
         # set period prior boundaries
-        bm = mlp - .1*mlp
-        bp = mlp + .1*mlp
+        b = .2
+        bm = mlp - b*mlp
+        bp = mlp + b*mlp
 
-        # running MCMC over maxlikelihood period
-    #     mlp = 1.41
-    #     m = np.empty(len(theta)+1)
-    #     m[:len(theta)] = theta
-    #     m[-1] = mlp
-    #     MCMC(m, x, y, yerr, bm, bp)
+#         # running MCMC over maxlikelihood period
+#         m = np.empty(len(theta)+1)
+#         m[:len(theta)] = theta
+#         m[-1] = mlp
+#         MCMC(m, x, y, yerr, bm, bp)

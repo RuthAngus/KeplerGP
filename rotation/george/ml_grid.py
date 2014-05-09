@@ -119,13 +119,24 @@ if __name__ == "__main__":
         # Load real data
         x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr0%s-2009350155506_llc.fits" %int(KID))
 
+        # plot periodogram
+        r = .4
+        freq, power = periodogram(y)
+        pl.clf()
+        pl.plot(1./freq, power)
+        pl.xlim(p_init[k]-(r*p_init[k]), p_init[k]+(r*p_init[k]))
+        pl.ylim(0, .5)
+        pl.savefig('%speriodogram' %int(KID))
+
         # subsample and truncate data
         cadence = 48. # number of data points/day
         npoints = 100. # number of data points needed/period
         subsamp = int(round(cadence*p_init[k]/npoints))
-        x = x[::subsamp]
-        y = y[::subsamp]
-        yerr = yerr[::subsamp]
+        if subsamp > 0:
+            x = x[::subsamp]
+            y = y[::subsamp]
+            yerr = yerr[::subsamp]
+
         l = 500. # truncate to 500 data points, total
         x = x[:l]
         y = y[:l]
@@ -152,15 +163,7 @@ if __name__ == "__main__":
         pl.xlabel('$\mathrm{Time~(days)}$')
         pl.ylabel('$\mathrm{Normalised~Flux}$')
         pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
-        pl.savefig('ml_data%s' %int(KID))
-
-        # plot periodogram
-        r = .5
-        freq, power = periodogram(y)
-        pl.clf()
-        pl.plot(1./freq, power)
-        pl.xlim(((1./freq)-(r*1./freq)), ((1./freq)+(r*1./freq)))
-        pl.savefig('periodogram%s' %int(KID))
+        pl.savefig('%sml_data' %int(KID))
 
         print "Initial parameters = (exp)", theta
         start = time.clock()
@@ -169,7 +172,6 @@ if __name__ == "__main__":
         print 'time =', elapsed
 
         # Grid over periods
-        r = .5
         mn, mx = p_init[k]-(p_init[k]*r), p_init[k]+(p_init[k]*r)
         step = (mx-mn)/20.
         Periods = np.arange(mn, mx, step)
@@ -181,18 +183,19 @@ if __name__ == "__main__":
 #             pl.plot(Periods, L, 'k-')
 #             pl.xlabel('Period')
 #             pl.ylabel('Likelihood')
-#             pl.savefig('ml_update%s' %int(KID))
+#             pl.savefig('%sml_update' %int(KID))
+
+        np.savetxt('%sml_results.txt' %int(KID), np.transpose((Periods, L)))
+
+        mlp = Periods[L == max(L)]
+        print 'max liklihood period = ', mlp
 
         pl.clf()
         pl.plot(Periods, L, 'k-')
         pl.xlabel('Period')
         pl.ylabel('Likelihood')
-        pl.savefig('ml_likelihood%s' %int(KID))
-
-        np.savetxt('ml_results%s.txt' %int(KID), np.transpose((Periods, L)))
-
-        mlp = Periods[L == max(L)]
-        print 'max liklihood period = ', mlp
+        pl.title('Period = %s' %mlp)
+        pl.savefig('%sml_likelihood' %int(KID))
 
         # set period prior boundaries
         b = .2

@@ -30,7 +30,7 @@ def lnprior(theta, bm, bp):
 
 # posterior prob
 def lnprob(theta, x, y, yerr, bp, bm):
-    lp = lnprior(theta, b)
+    lp = lnprior(theta, bm, bp)
     if not np.isfinite(lp):
         return -np.inf
     try:
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     r = .4 # range of periods to try
     s = 30. # number of periods to try
     b = .2 # prior boundaries
-    mpl, bm, bp = global_max(x, y, yerr, theta, P, r, s, b)
+    mlp, bm, bp = global_max(x, y, yerr, theta, P, r, s, b)
 
     # running MCMC over maxlikelihood period
     m = np.empty(len(theta)+1)

@@ -10,7 +10,8 @@ import scipy.optimize as so
 import time
 from matplotlib.ticker import MaxNLocator
 from scipy.optimize import fmin
-from scipy.signal import periodogram
+from scipy.signal import periodogram, find_peaks_cwt
+import pylab as pb
 
 ocols = ['#FF9933','#66CCCC' , '#FF33CC', '#3399FF', '#CC0066', '#99CC99', '#9933FF', '#CC0000']
 plotpar = {'axes.labelsize': 20,
@@ -29,7 +30,7 @@ def lnprior(theta, bm, bp):
     return -np.inf
 
 # posterior prob
-def lnprob(theta, x, y, yerr, bp, bm):
+def lnprob(theta, x, y, yerr, bm, bp):
     lp = lnprior(theta, bm, bp)
     if not np.isfinite(lp):
         return -np.inf
@@ -55,7 +56,7 @@ def maxlike(theta, x, y, yerr, P, name):
 #     savedata[-1] = like
 #     np.savetxt('results/ml_result%s.txt'%name, savedata)
 
-    return -like
+    return -like, result
 
 def MCMC(theta, x, y, yerr, bm, bp):
 
@@ -109,24 +110,13 @@ def MCMC(theta, x, y, yerr, bm, bp):
 
 def global_max(x, y, yerr, theta, P, r, s, b):
 
-        # plot data
-        pl.clf()
-        pl.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='0.5', zorder=2)
-        xs = np.linspace(min(x), max(x), 1000)
-        pl.plot(xs, predict(xs, x, y, yerr, theta, P)[0], color='#339999', linestyle = '-',\
-                zorder=1, linewidth='2')
-        pl.xlabel('$\mathrm{Time~(days)}$')
-        pl.ylabel('$\mathrm{Normalised~Flux}$')
-        pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
-        pl.savefig('%sml_data' %int(KID))
-
-        # plot periodogram
-        freq, power = periodogram(y)
-        pl.clf()
-        pl.plot(1./freq, power)
-        pl.xlim(P-(r*P), P+(r*P))
-        pl.ylim(0, .5)
-        pl.savefig('%speriodogram' %int(KID))
+#         # plot periodogram
+#         freq, power = periodogram(y)
+#         pl.clf()
+#         pl.plot(1./freq, power)
+#         pl.xlim(P-(r*P), P+(r*P))
+#         pl.ylim(0, .5)
+#         pl.savefig('%speriodogram' %int(KID))
 
         print "Initial parameters = (exp)", theta
         start = time.clock()
@@ -139,20 +129,30 @@ def global_max(x, y, yerr, theta, P, r, s, b):
         step = (mx-mn)/s
         Periods = np.arange(mn, mx, step)
         L = np.zeros_like(Periods)
+        results = np.zeros((len(L), 4))
 
         for i, p in enumerate(Periods):
-            L[i] = maxlike(theta, x, y, yerr, p, i)
-#             pl.clf()
-#             pl.plot(Periods, L, 'k-')
-#             pl.xlabel('Period')
-#             pl.ylabel('Likelihood')
-#             pl.savefig('%sml_update' %int(KID))
+            L[i], results[i,:] = maxlike(theta, x, y, yerr, p, i)
 
         np.savetxt('%sml_results.txt' %int(KID), np.transpose((Periods, L)))
 
         mlp = Periods[L == max(L)]
-        print 'max liklihood period = ', mlp
+        mlresult = results[L == max(L)]
+        print 'max likelihood period = ', mlp
 
+        print 'mlresult = ', mlresult[0]
+        # plot data
+        pl.clf()
+        pl.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='0.5', zorder=2)
+        xs = np.linspace(min(x), max(x), 1000)
+        pl.plot(xs, predict(xs, x, y, yerr, mlresult[0], mlp)[0], color='#339999', linestyle = '-',\
+                zorder=1, linewidth='2')
+        pl.xlabel('$\mathrm{Time~(days)}$')
+        pl.ylabel('$\mathrm{Normalised~Flux}$')
+        pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
+        pl.savefig('%sml_data' %int(KID))
+
+        # plot GPeriodogram
         pl.clf()
         pl.plot(Periods, L, 'k-')
         pl.xlabel('Period')
@@ -166,7 +166,66 @@ def global_max(x, y, yerr, theta, P, r, s, b):
 
         return mlp, bm, bp
 
+def autocorrelation(x, y):
+
+    # calculate autocorrelation fn
+    lags, acf, lines, axis = pb.acorr(y, maxlags = len(y)/2.)
+
+    # halve acf and find peaks
+    acf = acf[len(acf)/2.:]
+    pks = find_peaks_cwt(acf, np.arange(10, 20)) # play with these params,
+    #they define peak widths
+    peaks = pks[1:] # lose the first peak
+
+    pl.clf()
+    pl.subplot(2,1,1)
+    pl.plot(x, y, 'k.')
+    pl.subplot(2,1,2)
+    pl.plot(np.arange(len(acf))*cadence, acf)
+    [pl.axvline(peak*cadence, linestyle = '--', color = 'r') for peak in peaks]
+    pl.title('Period = %s' %period)
+    pl.savefig('%sacf' %int(KID))
+
+    period =  peaks[0]*cadence
+    print 'acf period = ', period
+    return period
+
+def pgram(y, r, P):
+
+    # calculate periodogram
+    freq, power = periodogram(y)
+    per = 1./freq
+
+    # limit range
+    a = (per < P + (r*P)) * (per > P - (r*P))
+    per = per[a]
+    power = power[a]
+
+    # find peaks
+#     pks = find_peaks_cwt(power, np.arange(.01, 10, .01))
+    try:
+        pks = find_peaks_cwt(power, np.arange(1, 10))
+        per_peaks = per[pks][::-1]
+        pow_peaks = power[pks][::-1]
+        period = per_peaks[pow_peaks == max(pow_peaks)]
+        print 'periodogram period = ', period
+
+        # plot
+        pl.clf()
+        pl.plot(per, power)
+        pl.xlim(P-(r*P), P+(r*P))
+    #     pl.ylim(0, 100000)
+        [pl.axvline(pk, linestyle = '--', color = 'r') for pk in per_peaks]
+        pl.title('Period = %s' %period)
+        pl.savefig('%speriodogram' %int(KID))
+        return period
+    except:
+        "ValueError:"
+        pass
+
 if __name__ == "__main__":
+
+    cadence = 0.02043365
 
     # Load target list with ACF periods
     data = np.genfromtxt('/Users/angusr/Python/george/targets.txt').T
@@ -175,13 +234,28 @@ if __name__ == "__main__":
 
     for k, KID in enumerate(KIDs):
 
-        # Load real data
+        print k, KID
+
+        # Load real quarter 3 data
         x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr0%s-2009350155506_llc.fits" %int(KID))
 
+        r = .4 # range of periods to try
+        s = 100. # number of periods to try
+        b = .2 # prior boundaries
+
+        pgram(y, r, p_init[k])
+
+        # normalise so range is 2 - no idea if this is the right thing to do...
+        yerr = 2*yerr/(max(y)-min(y))
+        y = 2*y/(max(y)-min(y))
+        y = y-np.median(y)
+
+        autocorrelation(x, y)
+
         # subsample and truncate data
-        cadence = 48. # number of data points/day
-        npoints = 100. # number of data points needed/period
-        subsamp = int(round(cadence*p_init[k]/npoints))
+        nday = 48. # number of data points/day
+        npoints = 30. # number of data points needed/period
+        subsamp = int(round(nday*p_init[k]/npoints))
         if subsamp > 0:
             x = x[::subsamp]
             y = y[::subsamp]
@@ -192,25 +266,21 @@ if __name__ == "__main__":
         y = y[:l]
         yerr = yerr[:l]
 
-        # normalise so range is 2 - no idea if this is the right thing to do...
-        yerr = 2*yerr/(max(y)-min(y))
-        y = 2*y/(max(y)-min(y))
-        y = y-np.median(y)
+#         theta, P = [-2., -2., -1.2, 1.], 1.7 # generating fake data
+        theta = [-2., -2., -1.2, 1.]
 
-    #     theta, P = [-2., -2., -1.2, 1.], 1.7 # generating fake data
-        theta, P = [-2., -2., -1.2, 1.], p_init[k]
+#         # generate fake data
+#         K = QP(theta, x, yerr, P)
+#         y = np.random.multivariate_normal(np.zeros(len(x)), K)
 
-    #     # generate fake data
-    #     K = QP(theta, x, yerr, P)
-    #     y = np.random.multivariate_normal(np.zeros(len(x)), K)
+#         raw_input('enter')
 
-    r = .4 # range of periods to try
-    s = 30. # number of periods to try
-    b = .2 # prior boundaries
-    mlp, bm, bp = global_max(x, y, yerr, theta, P, r, s, b)
+        mlp, bm, bp = global_max(x, y, yerr, theta, p_init[k], r, s, b)
 
-    # running MCMC over maxlikelihood period
-    m = np.empty(len(theta)+1)
-    m[:len(theta)] = theta
-    m[-1] = mlp
-    MCMC(m, x, y, yerr, bm, bp)
+#         # running MCMC over maxlikelihood period
+#         m = np.empty(len(theta)+1)
+#         m[:len(theta)] = theta
+#         m[-1] = mlp
+# #         m = [-2.16545599, -0.12804739, -0.19512039, 3.4567929, 2.496]
+# #         bm, bp = 2., 3.
+#         MCMC(m, x, y, yerr, bm, bp)

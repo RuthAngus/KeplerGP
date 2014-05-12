@@ -11,6 +11,7 @@ import time
 from matplotlib.ticker import MaxNLocator
 from scipy.optimize import fmin
 from scipy.signal import periodogram, find_peaks_cwt
+import scipy as sp
 import pylab as pb
 
 ocols = ['#FF9933','#66CCCC' , '#FF33CC', '#3399FF', '#CC0066', '#99CC99', '#9933FF', '#CC0000']
@@ -110,14 +111,6 @@ def MCMC(theta, x, y, yerr, bm, bp):
 
 def global_max(x, y, yerr, theta, P, r, s, b):
 
-#         # plot periodogram
-#         freq, power = periodogram(y)
-#         pl.clf()
-#         pl.plot(1./freq, power)
-#         pl.xlim(P-(r*P), P+(r*P))
-#         pl.ylim(0, .5)
-#         pl.savefig('%speriodogram' %int(KID))
-
         print "Initial parameters = (exp)", theta
         start = time.clock()
         print "Initial lnlike = ", -neglnlike(theta, x, y, yerr, P),"\n"
@@ -154,7 +147,8 @@ def global_max(x, y, yerr, theta, P, r, s, b):
 
         # plot GPeriodogram
         pl.clf()
-        pl.plot(Periods, L, 'k-')
+        area = sp.integrate.trapz(np.exp(L))
+        pl.plot(Periods, (np.exp(L))/area, 'k-')
         pl.xlabel('Period')
         pl.ylabel('Likelihood')
         pl.title('Period = %s' %mlp)
@@ -236,8 +230,8 @@ if __name__ == "__main__":
     KIDs = data[0]
     p_init = data[1]
 
-    KIDs = KIDs[4:5]
-    p_init = p_init[4:5]
+#     KIDs = KIDs[1:]
+#     p_init = p_init[1:]
 
     for k, KID in enumerate(KIDs):
 
@@ -247,7 +241,7 @@ if __name__ == "__main__":
         x, y, yerr = load("/Users/angusr/angusr/data2/Q3_public/kplr0%s-2009350155506_llc.fits" %int(KID))
 
         r = .4 # range of periods to try
-        s = 100. # number of periods to try
+        s = 10. # number of periods to try
         b = .2 # prior boundaries
 
         pgram(y, r, p_init[k], highres = True)
@@ -261,7 +255,7 @@ if __name__ == "__main__":
 
         # subsample and truncate data
         nday = 48. # number of data points/day
-        npoints = 30. # number of data points needed/period
+        npoints = 100. # number of data points needed/period
         subsamp = int(round(nday*p_init[k]/npoints))
         if subsamp > 0:
             x = x[::subsamp]
@@ -282,6 +276,7 @@ if __name__ == "__main__":
 
 #         raw_input('enter')
 
+        # THIS NEEDS TO RETURN ALL MAX LIKELIHOOD PARAMS
         mlp, bm, bp = global_max(x, y, yerr, theta, p_init[k], r, s, b)
 
 #         # running MCMC over maxlikelihood period

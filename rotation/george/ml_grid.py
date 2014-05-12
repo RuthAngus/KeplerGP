@@ -176,21 +176,21 @@ def autocorrelation(x, y):
     pks = find_peaks_cwt(acf, np.arange(10, 20)) # play with these params,
     #they define peak widths
     peaks = pks[1:] # lose the first peak
+    period =  peaks[0]*cadence
+    print 'acf period = ', period
 
     pl.clf()
     pl.subplot(2,1,1)
     pl.plot(x, y, 'k.')
+    pl.title('Period = %s' %period)
     pl.subplot(2,1,2)
     pl.plot(np.arange(len(acf))*cadence, acf)
     [pl.axvline(peak*cadence, linestyle = '--', color = 'r') for peak in peaks]
-    pl.title('Period = %s' %period)
     pl.savefig('%sacf' %int(KID))
 
-    period =  peaks[0]*cadence
-    print 'acf period = ', period
     return period
 
-def pgram(y, r, P):
+def pgram(y, r, P, highres):
 
     # calculate periodogram
     freq, power = periodogram(y)
@@ -217,7 +217,11 @@ def pgram(y, r, P):
     #     pl.ylim(0, 100000)
         [pl.axvline(pk, linestyle = '--', color = 'r') for pk in per_peaks]
         pl.title('Period = %s' %period)
-        pl.savefig('%speriodogram' %int(KID))
+        if highres == True:
+            pl.savefig('%speriodogram1' %int(KID))
+        else:
+            pl.savefig('%speriodogram2' %int(KID))
+
         return period
     except:
         "ValueError:"
@@ -232,6 +236,9 @@ if __name__ == "__main__":
     KIDs = data[0]
     p_init = data[1]
 
+    KIDs = KIDs[4:5]
+    p_init = p_init[4:5]
+
     for k, KID in enumerate(KIDs):
 
         print k, KID
@@ -243,7 +250,7 @@ if __name__ == "__main__":
         s = 100. # number of periods to try
         b = .2 # prior boundaries
 
-        pgram(y, r, p_init[k])
+        pgram(y, r, p_init[k], highres = True)
 
         # normalise so range is 2 - no idea if this is the right thing to do...
         yerr = 2*yerr/(max(y)-min(y))

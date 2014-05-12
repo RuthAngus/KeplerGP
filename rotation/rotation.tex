@@ -109,7 +109,17 @@ To get around this problem we could sample over a grid in period, running an MCM
 Alternatively we could try something like nested sampling.
 For the moment we have tried setting the walkers off at evenly spaced positions in period.
 
-Think about how you want to index the names of files and plots, etc!
+I am currently using a periodogram and an autocorrelation function to initialise.
+An initial period is assigned to a star from a combination of ACF, periodogram and looking at the light-curve by eye.
+This initial period determines the subsampling and truncating parameters.
+These are currently set so that there are around 100 data points per period and around 5 full periods per star (i.e. 500 data points per star).
+It also determines the range of periods to grid over (at the moment it's around $\pm 0.4 /times P_{rot}$).
+The number of grid points is another tunable parameter, currently set to 30.
+
+The maximum likelihood period found from the grid is then used to initialise the MCMC, where the prior boundaries are defined so that, in theory, the MCMC will only be sampling from very close to the global maximum period and the posterior will not be multimodal.
+
+Still need to interpolate across gaps and remove linear trend before calculating the acf.
+Also, look at Amy's peak finding algorithm.
 
 there is still something not quite right - the mean function doesn't seem to return to zero.... I fear this may cause problems...
 

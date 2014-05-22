@@ -1,4 +1,4 @@
-\documentclass[12pt,preprint]{aastex}
+\documentclass[10pt,preprint]{aastex}
 \usepackage{amsmath}
 \usepackage{breqn}
 \usepackage{cite,natbib}
@@ -118,6 +118,9 @@ The number of grid points is another tunable parameter, currently set to 30.
 
 The maximum likelihood period found from the grid is then used to initialise the MCMC, where the prior boundaries are defined so that, in theory, the MCMC will only be sampling from very close to the global maximum period and the posterior will not be multimodal.
 
+Plot the likelihood and renormalise so that the area under the grid is 1.
+sample from peak and harmonics
+Don't want to look into samplers that can handle multi-modal posteriors too much because they are likely to be fairly computationally intensive.
 Still need to interpolate across gaps and remove linear trend before calculating the acf.
 Also, look at Amy's peak finding algorithm.
 
@@ -125,7 +128,7 @@ there is still something not quite right - the mean function doesn't seem to ret
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=6in, clip=true, trim=0 0 0.5in 0]{/Users/angusr/Python/KeplerGP/rotation/old_figs/success.png}
+\includegraphics[width=4in, clip=true, trim=0 0 0.5in 0]{/Users/angusr/Python/KeplerGP/rotation/old_figs/success.png}
 \caption{Posterior distributions for the three non-periodic parameters, when $P$ is held fixed.}
 \label{fig:fixed_period}
 \end{center}

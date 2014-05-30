@@ -311,7 +311,7 @@ if __name__ == "__main__":
         # find minima either side of peak
         #FIXME: maybe I should have a bit of leeway either side of the peak?
         lmin, rmin = find_mins(L)
-        r = (Periods[lmin], Periods[rmin])
+        r = (Periods[lmin-2], Periods[rmin+2])
         Periods = find_range(mlp, r, s)
 
         # zoom in on highest peak

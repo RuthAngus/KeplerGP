@@ -199,7 +199,8 @@ def pgram(y, r, P, highres):
     per = 1./freq
 
     # limit range
-    a = (per < P + (r*P)) * (per > P - (r*P))
+#     a = (per < P + (r*P)) * (per > P - (r*P))
+    a = (0 < P ) * (P < 100)
     per = per[a]
     power = power[a]
 

@@ -137,16 +137,17 @@ def global_max(x, y, yerr, theta, Periods, P, r, s, b, save):
         print 'max likelihood period = ', mlp
 
         print 'mlresult = ', mlresult[0]
+        print 'L', L
         # plot data
-        pl.clf()
-        pl.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='0.5', zorder=2)
-        xs = np.linspace(min(x), max(x), 1000)
-        pl.plot(xs, predict(xs, x, y, yerr, mlresult[0], mlp)[0], color='#339999', linestyle = '-',\
-                zorder=1, linewidth='2')
-        pl.xlabel('$\mathrm{Time~(days)}$')
-        pl.ylabel('$\mathrm{Normalised~Flux}$')
-        pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
-        pl.savefig('%sml_data%s' %(int(KID), save))
+#         pl.clf()
+#         pl.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='0.5', zorder=2)
+#         xs = np.linspace(min(x), max(x), 1000)
+#         pl.plot(xs, predict(xs, x, y, yerr, mlresult[0], mlp)[0], color='#339999', linestyle = '-',\
+#                 zorder=1, linewidth='2')
+#         pl.xlabel('$\mathrm{Time~(days)}$')
+#         pl.ylabel('$\mathrm{Normalised~Flux}$')
+#         pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
+#         pl.savefig('/Users/angusr/Python/george/data/%sml_data%s' %(int(KID), save))
 
         # plot GPeriodogram
         pl.clf()
@@ -154,8 +155,12 @@ def global_max(x, y, yerr, theta, Periods, P, r, s, b, save):
         pl.plot(Periods, (np.exp(L))/area, 'k-')
         pl.xlabel('Period')
         pl.ylabel('Likelihood')
-        pl.title('Period = %s' %mlp)
-        pl.savefig('/likelihood/%sml_likelihood%s' %(int(KID), save))
+        tdata = np.genfromtxt('/Users/angusr/angusr/Suz_simulations/final_table.txt', skip_header=1).T
+        truemin = tdata[19][KID]
+        truemax = tdata[20][KID]
+        true = .5*(truemin+truemax)
+        pl.title('Period = %s, true = %s' %(mlp, true))
+        pl.savefig('/Users/angusr/Python/george/likelihood/%sml_likelihood%s' %(int(KID), save))
 
         # set period prior boundaries
         bm = mlp - b*mlp
@@ -175,6 +180,7 @@ def autocorrelation(x, y):
     # halve acf and find peaks
     acf = acf[len(acf)/2.:]
     pks = find_peaks_cwt(acf, np.arange(10, 20)) # play with these params,
+
     #they define peak widths
     peaks = pks[1:] # lose the first peak
     period =  peaks[0]*cadence
@@ -182,12 +188,15 @@ def autocorrelation(x, y):
 
     pl.clf()
     pl.subplot(2,1,1)
-    pl.plot(x, y, 'k.')
+    pl.plot(x[:4000], y[:4000], 'k.')
     pl.title('Period = %s' %period)
     pl.subplot(2,1,2)
-    pl.plot(np.arange(len(acf))*cadence, acf)
+    pl.plot(np.arange(5000)*cadence, acf[:5000])
+#     pl.plot(np.arange(len(acf))*cadence, acf)
     [pl.axvline(peak*cadence, linestyle = '--', color = 'r') for peak in peaks]
+    pl.xlim(0, 5000*cadence)
     pl.savefig('/Users/angusr/Python/george/acf/%sacf' %int(KID))
+#     np.savetxt('/Users/angusr/Python/george/acf/%sacf_per.txt'%int(KID), period)
 
     return period
 
@@ -220,9 +229,10 @@ def pgram(y, r, P, highres):
         [pl.axvline(pk, linestyle = '--', color = 'r') for pk in per_peaks]
         pl.title('Period = %s' %period)
         if highres == True:
-            pl.savefig('/pgram/%speriodogram1' %int(KID))
+            pl.savefig('/Users/angusr/Python/george/pgram/%speriodogram1' %int(KID))
         else:
-            pl.savefig('/pgram/%speriodogram2' %int(KID))
+            pl.savefig('Users/angusr/Python/george/pgram/%speriodogram2' %int(KID))
+        np.savetxt('/Users/angusr/Python/george/pgram/%spgram_per.txt', period)
 
         return period
     except:
@@ -266,33 +276,59 @@ if __name__ == "__main__":
 
     save_results = np.zeros((len(KIDs), 8))
 
+#     # run acf on all targets
+#     for k, KID in enumerate(KIDs):
+#         print 'star = ', KID
+#         # Load light curves
+#         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
+#                 %strKIDs[k]).T
+#         x = data[0]
+#         y = data[1]
+#         yerr = y*1e-4 # one part per million #FIXME: this is made up!
+#         pl.clf()
+#         tc = 4000
+#         pl.subplot(2,1,1)
+# #         pl.plot(x[, y, 'k.')
+#         pl.plot(x[:tc], y[:tc], 'k.')
+#         pl.savefig('/Users/angusr/Python/george/data/%sdata'%int(KID))
+#         p_init = autocorrelation(x, y)
+
+    data = np.genfromtxt("/Users/angusr/Python/george/init.txt").T
+    KIDs = data[0][2:]
+    p_inits = data[1][2:]
+
     for k, KID in enumerate(KIDs):
 
-        print k, KID
+        print 'star = ', KID
 
         # Load light curves
         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
                 %strKIDs[k]).T
         x = data[0]
         y = data[1]
-        yerr = y*1e-6 # one part per million #FIXME: this is made up!
+        yerr = y*1e-4 # one part per million #FIXME: this is made up!
 
         r = .4 # range of periods to try
         s = 30. # number of periods to try
+#         s = 5. # number of periods to try
         b = .2 # prior boundaries
 
         # compute acf
-        p_init = autocorrelation(x, y)
+#         acf_per = autocorrelation(x, y)
+        p_init = p_inits[k]
 
         # compute lomb scargle periodogram
-        pgram(y, r, p_init, highres = True)
-
-        raw_input('enter')
+#         pgram(y, r, p_init, highres = True)
 
         # normalise so range is 2 - no idea if this is the right thing to do...
         yerr = 2*yerr/(max(y)-min(y))
         y = 2*y/(max(y)-min(y))
         y = y-np.median(y)
+
+#         pl.clf()
+#         trunc = 1000
+#         pl.errorbar(x[:trunc], y[:trunc], yerr=yerr[:trunc], fmt='k.')
+#         pl.savefig("/Users/angusr/Python/george/data/%sraw_data"%int(KID))
 
         # subsample and truncate
         x_sub, y_sub, yerr_sub = subs(x, y, yerr, p_init, 500.)
@@ -306,7 +342,17 @@ if __name__ == "__main__":
         # find range of periods to calculate L over
         Periods = find_range(p_init, r, s)
 
+#         # plot data
+#         pl.clf()
+#         pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.')
+#         xs = np.arange(min(x_sub), max(x_sub), 0.01)
+#         pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
+#                 p_init)[0], color='#339999', linestyle = '-',\
+#                 zorder=1, linewidth='2')
+#         pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
+
         # Find first global max
+        print 'yes'
         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
                 r, s, b, '1')
 
@@ -322,22 +368,7 @@ if __name__ == "__main__":
         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
                 r, s, b, '2')
 
-        save_results[k,:] = np.array([KID, mlp, r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
+        save_results[k,:] = np.array([KID, mlp[0], r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
         print 'saving'
         print save_results
-        np.savetxt('results.txt', save_results)
-
-#         # running MCMC over maxlikelihood period
-#         data = np.genfromtxt('/Users/angusr/Python/george/results.txt').T
-#         r0 = data[2][0]
-#         r1 = data[3][0]
-#         m = [data[4][0], data[5][0], data[6][0], data[7][0], data[1][0]]
-#         print m
-#         raw_input('enter')
-#         MCMC(m, x, y, yerr, r0, r1)
-#         raw_input('enter')
-
-#         m = np.empty(len(theta)+1)
-#         m[:len(theta)] = theta
-#         m[-1] = mlp
-#         MCMC(m, x, y, yerr, r[0], r[1])
+        np.savetxt('/Users/angusr/Python/george/inj_results/%sresults.txt'%int(KID), save_results)

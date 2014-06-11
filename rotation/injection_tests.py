@@ -293,13 +293,21 @@ if __name__ == "__main__":
 #         pl.savefig('/Users/angusr/Python/george/data/%sdata'%int(KID))
 #         p_init = autocorrelation(x, y)
 
-    data = np.genfromtxt("/Users/angusr/Python/george/init.txt").T
-    KIDs = data[0][2:]
-    p_inits = data[1][2:]
+#     data = np.genfromtxt("/Users/angusr/Python/george/init.txt").T
+#     KIDs = data[0][2:]
+#     p_inits = data[1][2:]
+    KIDs = range(1004)
 
     for k, KID in enumerate(KIDs):
 
         print 'star = ', KID
+
+        qperiods = []
+        for i in range(10):
+            data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/%s_3_result.txt"%KID)
+            qperiods.append(data[0])
+        p_init = np.mean(qperiods)
+        print p_init
 
         # Load light curves
         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
@@ -315,7 +323,7 @@ if __name__ == "__main__":
 
         # compute acf
 #         acf_per = autocorrelation(x, y)
-        p_init = p_inits[k]
+#         p_init = p_inits[k]
 
         # compute lomb scargle periodogram
 #         pgram(y, r, p_init, highres = True)

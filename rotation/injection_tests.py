@@ -159,7 +159,7 @@ def global_max(x, y, yerr, theta, Periods, P, r, s, b, save):
         truemin = tdata[19][KID]
         truemax = tdata[20][KID]
         true = .5*(truemin+truemax)
-        pl.title('Period = %s, true = %s' %(mlp, true))
+        pl.title('Period = %s, true = %s, init = %s' %(mlp, true, P))
         pl.savefig('/Users/angusr/Python/george/likelihood/%sml_likelihood%s' %(int(KID), save))
 
         # set period prior boundaries
@@ -298,16 +298,16 @@ if __name__ == "__main__":
 #     p_inits = data[1][2:]
     KIDs = range(1004)
 
+    # load mean acf periods
+    data = np.genfromtxt('/Users/angusr/Python/KeplerGP/rotation/acf_vs_true.txt').T
+    p_init = data[2]
+
     for k, KID in enumerate(KIDs):
 
         print 'star = ', KID
 
-        qperiods = []
-        for i in range(10):
-            data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/%s_3_result.txt"%KID)
-            qperiods.append(data[0])
-        p_init = np.mean(qperiods)
-        print p_init
+        p_init = p_init[k]
+        print 'p_init', p_init
 
         # Load light curves
         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
@@ -364,7 +364,7 @@ if __name__ == "__main__":
         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
                 r, s, b, '1')
 
-        np.savetxt('%sml_results.txt' %int(KID), np.transpose((Periods, L)))
+        np.savetxt('%sml_results1.txt' %int(KID), np.transpose((Periods, L)))
 
         # find minima either side of peak
         #FIXME: maybe I should have a bit of leeway either side of the peak?
@@ -375,6 +375,8 @@ if __name__ == "__main__":
         # zoom in on highest peak
         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
                 r, s, b, '2')
+
+        np.savetxt('%sml_results2.txt' %int(KID), np.transpose((Periods, L)))
 
         save_results[k,:] = np.array([KID, mlp[0], r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
         print 'saving'

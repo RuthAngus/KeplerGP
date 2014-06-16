@@ -113,7 +113,8 @@ def find_range(P, r, s):
     if type(r)==tuple:
         mn, mx = r
     else:
-        mn, mx = P-(P*r), P+(P*r)
+#         mn, mx = P-(P*r), P+(P*r)
+        mn, mx = P*r, P*(1./r)
     step = (mx-mn)/s
     return np.arange(mn, mx, step)
 
@@ -306,6 +307,8 @@ if __name__ == "__main__":
 
         print 'star = ', KID
 
+        print p_init[k]
+        raw_input('enter')
         p_init = p_init[k]
         print 'p_init', p_init
 
@@ -316,7 +319,7 @@ if __name__ == "__main__":
         y = data[1]
         yerr = y*1e-4 # one part per million #FIXME: this is made up!
 
-        r = .4 # range of periods to try
+        r = .5 # range of periods to try
         s = 30. # number of periods to try
 #         s = 5. # number of periods to try
         b = .2 # prior boundaries

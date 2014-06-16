@@ -118,6 +118,10 @@ def find_range(P, r, s):
     step = (mx-mn)/s
     return np.arange(mn, mx, step)
 
+def find_log_range(P, r, s):
+    # Grid over periods
+    return np.logspace(0, 4.5, s, base=np.e)
+
 def global_max(x, y, yerr, theta, Periods, P, r, s, b, save):
 
         print "Initial parameters = (exp)", theta
@@ -277,44 +281,30 @@ if __name__ == "__main__":
 
     save_results = np.zeros((len(KIDs), 8))
 
-#     # run acf on all targets
-#     for k, KID in enumerate(KIDs):
-#         print 'star = ', KID
-#         # Load light curves
-#         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
-#                 %strKIDs[k]).T
-#         x = data[0]
-#         y = data[1]
-#         yerr = y*1e-4 # one part per million #FIXME: this is made up!
-#         pl.clf()
-#         tc = 4000
-#         pl.subplot(2,1,1)
-# #         pl.plot(x[, y, 'k.')
-#         pl.plot(x[:tc], y[:tc], 'k.')
-#         pl.savefig('/Users/angusr/Python/george/data/%sdata'%int(KID))
-#         p_init = autocorrelation(x, y)
-
 #     data = np.genfromtxt("/Users/angusr/Python/george/init.txt").T
 #     KIDs = data[0][2:]
 #     p_inits = data[1][2:]
-    KIDs = range(1004)
+    KIDs = np.arange(1004)
 
     # load mean acf periods
     data = np.genfromtxt('/Users/angusr/Python/KeplerGP/rotation/acf_vs_true.txt').T
     p_init = data[2]
 
+    # select stars
+    l = (p_init<1.9)*(p_init>1.8)
+    KIDs = KIDs[l]
+
     for k, KID in enumerate(KIDs):
 
         print 'star = ', KID
 
-        print p_init[k]
-        raw_input('enter')
-        p_init = p_init[k]
+        print p_init[KID]
+        p_init = p_init[KID]
         print 'p_init', p_init
 
         # Load light curves
         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
-                %strKIDs[k]).T
+                %strKIDs[KID]).T
         x = data[0]
         y = data[1]
         yerr = y*1e-4 # one part per million #FIXME: this is made up!
@@ -326,7 +316,7 @@ if __name__ == "__main__":
 
         # compute acf
 #         acf_per = autocorrelation(x, y)
-#         p_init = p_inits[k]
+#         p_init = p_inits[KID]
 
         # compute lomb scargle periodogram
 #         pgram(y, r, p_init, highres = True)
@@ -363,7 +353,6 @@ if __name__ == "__main__":
 #         pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
 
         # Find first global max
-        print 'yes'
         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
                 r, s, b, '1')
 

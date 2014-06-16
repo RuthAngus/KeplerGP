@@ -290,14 +290,22 @@ if __name__ == "__main__":
     data = np.genfromtxt('/Users/angusr/Python/KeplerGP/rotation/acf_vs_true.txt').T
     p_init = data[2]
 
-    # select stars
-    l = (p_init<1.9)*(p_init>1.8)
-    KIDs = KIDs[l]
+    # load truth
+    data = np.genfromtxt('/Users/angusr/angusr/Suz_simulations/final_table.txt', \
+            skip_header=1).T
+    pmin = data[19]
+    pmax = data[20]
+    p_init = .5*(pmin+pmax)
+
+#     # select stars
+#     l = (p_init<1.9)*(p_init>1.8)
+#     KIDs = KIDs[l]
 
     for k, KID in enumerate(KIDs):
 
         print 'star = ', KID
 
+        print p_init
         print p_init[KID]
         p_init = p_init[KID]
         print 'p_init', p_init
@@ -343,14 +351,15 @@ if __name__ == "__main__":
         # find range of periods to calculate L over
         Periods = find_range(p_init, r, s)
 
-#         # plot data
-#         pl.clf()
-#         pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.')
-#         xs = np.arange(min(x_sub), max(x_sub), 0.01)
-#         pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
-#                 p_init)[0], color='#339999', linestyle = '-',\
-#                 zorder=1, linewidth='2')
-#         pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
+        # plot data
+        pl.clf()
+        pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.')
+        xs = np.arange(min(x_sub), max(x_sub), 0.01)
+        pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
+                p_init)[0], color='#339999', linestyle = '-',\
+                zorder=1, linewidth='2')
+        pl.title('True Period = %s' %p_init)
+        pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
 
         # Find first global max
         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \

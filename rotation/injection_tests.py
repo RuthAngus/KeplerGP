@@ -154,18 +154,18 @@ def global_max(x, y, yerr, theta, Periods, P, r, s, b, save):
 #         pl.gca().yaxis.set_major_locator(MaxNLocator(prune='lower'))
 #         pl.savefig('/Users/angusr/Python/george/data/%sml_data%s' %(int(KID), save))
 
-        # plot GPeriodogram
-        pl.clf()
-        area = sp.integrate.trapz(np.exp(L))
-        pl.plot(Periods, (np.exp(L))/area, 'k-')
-        pl.xlabel('Period')
-        pl.ylabel('Likelihood')
-        tdata = np.genfromtxt('/Users/angusr/angusr/Suz_simulations/final_table.txt', skip_header=1).T
-        truemin = tdata[19][KID]
-        truemax = tdata[20][KID]
-        true = .5*(truemin+truemax)
-        pl.title('Period = %s, true = %s, init = %s' %(mlp, true, P))
-        pl.savefig('/Users/angusr/Python/george/likelihood/%sml_likelihood%s' %(int(KID), save))
+#         print 'plotting likelihoods'
+#         pl.clf()
+#         area = sp.integrate.trapz(np.exp(L))
+#         pl.plot(Periods, (np.exp(L))/area, 'k-')
+#         pl.xlabel('Period')
+#         pl.ylabel('Likelihood')
+#         tdata = np.genfromtxt('/Users/angusr/angusr/Suz_simulations/final_table.txt', skip_header=1).T
+#         truemin = tdata[19][KID]
+#         truemax = tdata[20][KID]
+#         true = .5*(truemin+truemax)
+#         pl.title('Period = %s, true = %s, init = %s' %(mlp, true, P))
+#         pl.savefig('/Users/angusr/Python/george/likelihood/%sml_likelihood%s' %(int(KID), save))
 
         # set period prior boundaries
         bm = mlp - b*mlp
@@ -283,12 +283,12 @@ if __name__ == "__main__":
 
 #     data = np.genfromtxt("/Users/angusr/Python/george/init.txt").T
 #     KIDs = data[0][2:]
-#     p_inits = data[1][2:]
-    KIDs = np.arange(1004)
+#     p_init = data[1][2:]
+    KIDs = np.arange(1000)
 
-    # load mean acf periods
-    data = np.genfromtxt('/Users/angusr/Python/KeplerGP/rotation/acf_vs_true.txt').T
-    p_init = data[2]
+#     # load mean acf periods
+#     data = np.genfromtxt('/Users/angusr/Python/KeplerGP/rotation/acf_vs_true.txt').T
+#     p_init = data[2]
 
     # load truth
     data = np.genfromtxt('/Users/angusr/angusr/Suz_simulations/final_table.txt', \
@@ -301,14 +301,10 @@ if __name__ == "__main__":
 #     l = (p_init<1.9)*(p_init>1.8)
 #     KIDs = KIDs[l]
 
+    KIDs = KIDs[51:]
     for k, KID in enumerate(KIDs):
 
         print 'star = ', KID
-
-        print p_init
-        print p_init[KID]
-        p_init = p_init[KID]
-        print 'p_init', p_init
 
         # Load light curves
         data = np.genfromtxt("/Users/angusr/angusr/Suz_simulations/final/lightcurve_%s.txt" \
@@ -317,13 +313,19 @@ if __name__ == "__main__":
         y = data[1]
         yerr = y*1e-4 # one part per million #FIXME: this is made up!
 
+        pl.clf()
+        pl.errorbar(x, y, yerr=yerr, fmt='k.')
+        pl.xlabel('$\mathrm{Time~(days)}$')
+        pl.ylabel('$\mathrm{Flux}$')
+        pl.savefig('raw_data%s'%strKIDs[KID])
+
         r = .5 # range of periods to try
         s = 30. # number of periods to try
 #         s = 5. # number of periods to try
         b = .2 # prior boundaries
 
         # compute acf
-#         acf_per = autocorrelation(x, y)
+         acf_per = autocorrelation(x, y)
 #         p_init = p_inits[KID]
 
         # compute lomb scargle periodogram
@@ -339,8 +341,8 @@ if __name__ == "__main__":
 #         pl.errorbar(x[:trunc], y[:trunc], yerr=yerr[:trunc], fmt='k.')
 #         pl.savefig("/Users/angusr/Python/george/data/%sraw_data"%int(KID))
 
-        # subsample and truncate
-        x_sub, y_sub, yerr_sub = subs(x, y, yerr, p_init, 500.)
+        print 'subsample and truncate'
+        x_sub, y_sub, yerr_sub = subs(x, y, yerr, p_init[KID], 500.)
 
         theta = [-2., -2., -1.2, 1.]
 
@@ -349,20 +351,20 @@ if __name__ == "__main__":
 #         y = np.random.multivariate_normal(np.zeros(len(x)), K)
 
         # find range of periods to calculate L over
-        Periods = find_range(p_init, r, s)
+        Periods = find_range(p_init[KID], r, s)
 
-        # plot data
+        print 'plotting data...'
         pl.clf()
-        pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.')
+        pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.', capsize=0, ecolor='.7')
         xs = np.arange(min(x_sub), max(x_sub), 0.01)
-        pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
-                p_init)[0], color='#339999', linestyle = '-',\
-                zorder=1, linewidth='2')
-        pl.title('True Period = %s' %p_init)
+#         pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
+#                 p_init[KID])[0], color='#339999', linestyle = '-',\
+#                 zorder=1, linewidth='2')
+        pl.title('$\mathrm{True~Period} = %s$' %p_init[KID])
         pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
 
-        # Find first global max
-        L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
+        print 'Find first global max'
+        L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init[KID], \
                 r, s, b, '1')
 
         np.savetxt('%sml_results1.txt' %int(KID), np.transpose((Periods, L)))
@@ -370,16 +372,20 @@ if __name__ == "__main__":
         # find minima either side of peak
         #FIXME: maybe I should have a bit of leeway either side of the peak?
         lmin, rmin = find_mins(L)
-        r = (Periods[lmin-2], Periods[rmin+2])
+#         r = (Periods[lmin-2], Periods[rmin+2])
+        r = (mlp-.2*mlp, mlp+.2*mlp) # don't find minima, just take window
         Periods = find_range(mlp, r, s)
 
-        # zoom in on highest peak
-        L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init, \
+        print 'zoom in on highest peak'
+        L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init[KID], \
                 r, s, b, '2')
 
         np.savetxt('%sml_results2.txt' %int(KID), np.transpose((Periods, L)))
 
-        save_results[k,:] = np.array([KID, mlp[0], r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
+        save_results[KID,:] = np.array([KID, mlp[0], r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
         print 'saving'
         print save_results
-        np.savetxt('/Users/angusr/Python/george/inj_results/%sresults.txt'%int(KID), save_results)
+#         np.savetxt('/Users/angusr/Python/george/inj_results/%sresults.txt'%int(KID), save_results)
+
+        import datetime
+        print datetime.datetime.now()

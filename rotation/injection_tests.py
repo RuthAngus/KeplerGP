@@ -87,13 +87,14 @@ def MCMC(theta, x, y, yerr, bm, bp):
         pl.figure()
         for i in range(ndim):
             pl.clf()
-            pl.axhline(par_true[i], color = "r")
+            pl.axhline(theta[i], color = "r")
             pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3)
             pl.savefig("%s.png" %i)
 
         flat = sampler.chain[:, 50:, :].reshape((-1, ndim))
         mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                           zip(*np.percentile(flat, [16, 50, 84], axis=0)))
+        print mcmc_result
         mres = np.array(mcmc_result)[:, 0]
         print 'mcmc_result = ', mres
 

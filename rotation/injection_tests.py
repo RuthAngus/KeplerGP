@@ -1,6 +1,8 @@
 import numpy as np
 import pyfits
 import matplotlib.pyplot as pl
+
+
 from fixed_p_like import lnlike, predict, QP, neglnlike
 import emcee
 import triangle
@@ -60,32 +62,45 @@ def maxlike(theta, x, y, yerr, P, name):
 
 def MCMC(theta, x, y, yerr, bm, bp):
 
+    # Compute initial likelihood
+    print 'initial lnlike = ', lnlike(theta, x, y, yerr)
+
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr, bm, bp))
     bi, pr = 200, 2000
-    start = time.clock()
     print("Burn-in")
     p0, lp, state = sampler.run_mcmc(p0, bi)
     sampler.reset()
+
+    nstep = 2000
+    nruns = 100.
+
     print("Production run")
-    sampler.run_mcmc(p0, pr)
-    elapsed = time.clock() - start
-    print 'time = ', elapsed/60., 'mins'
+    for j in range(int(nstep/nruns)):
 
-    print("Making triangle plots")
-    fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$", "$P$"]
-    fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
-    fig.savefig("triangle.png")
+        print 'run', j
+        p0, lp, state = sampler.run_mcmc(p0, nruns)
 
-    print("Plotting traces")
-    pl.figure()
-    for i in range(ndim):
-        pl.clf()
-        pl.axhline(theta[i], color = "r", zorder=2)
-        pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3, zorder=1)
-        pl.savefig("{0}.png".format(i))
+        print("Plotting traces")
+        pl.figure()
+        for i in range(ndim):
+            pl.clf()
+            pl.axhline(par_true[i], color = "r")
+            pl.plot(sampler.chain[:, :, i].T, 'k-', alpha=0.3)
+            pl.savefig("%s.png" %i)
+
+        flat = sampler.chain[:, 50:, :].reshape((-1, ndim))
+        mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+                          zip(*np.percentile(flat, [16, 50, 84], axis=0)))
+        mres = np.array(mcmc_result)[:, 0]
+        print 'mcmc_result = ', mres
+
+        print("Making triangle plot")
+        fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$", "$P$"]
+        fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+        fig.savefig("triangle.png")
 
     # Flatten chain
     samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
@@ -325,7 +340,7 @@ if __name__ == "__main__":
         b = .2 # prior boundaries
 
         # compute acf
-         acf_per = autocorrelation(x, y)
+        acf_per = autocorrelation(x, y)
 #         p_init = p_inits[KID]
 
         # compute lomb scargle periodogram

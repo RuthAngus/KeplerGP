@@ -63,8 +63,3 @@ for KID in range(nstars):
     m = [-5, m[1], 1.5, 9., np.log(m[-1])]
 
     MCMC(m, x_sub, y_sub, yerr_sub, np.log(r0), np.log(r1), "4")
-
-    #     m = np.empty(len(theta)+1)
-    #     m[:len(theta)] = theta
-    #     m[-1] = mlp
-    #     MCMC(m, x, y, yerr, r[0], r[1])

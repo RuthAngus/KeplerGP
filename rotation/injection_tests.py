@@ -60,7 +60,7 @@ def maxlike(theta, x, y, yerr, P, name):
 
     return -like, result
 
-def MCMC(theta, x, y, yerr, bm, bp):
+def MCMC(theta, x, y, yerr, bm, bp, fname):
 
     # Compute initial likelihood
     print 'initial lnlike = ', lnlike(theta, x, y, yerr)
@@ -95,13 +95,14 @@ def MCMC(theta, x, y, yerr, bm, bp):
         mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                           zip(*np.percentile(flat, [16, 50, 84], axis=0)))
         print mcmc_result
+        np.savetxt("mcmc_result%s.txt"%fname, mcmc_result)
         mres = np.array(mcmc_result)[:, 0]
         print 'mcmc_result = ', mres
 
         print("Making triangle plot")
         fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$", "$P$"]
         fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
-        fig.savefig("triangle.png")
+        fig.savefig("triangle_%s.png" %fname)
 
     # Flatten chain
     samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
@@ -287,6 +288,22 @@ def find_mins(L):
         rmin = -1
     return lmin, rmin
 
+def GP_injections(theta, x, yerr):
+
+        # generate fake data, uniform in log period between 1 and 90 days
+        periods = np.random.uniform(0, 4.5, 100)
+
+        for i, P in enumerate(periods):
+            P = np.exp(P)
+            K = QP(theta, x, yerr, P)
+            y = np.random.multivariate_normal(np.zeros(len(x)), K)
+            np.savetxt("%sGPlightcurve", np.transpose((x, y, yerr)))
+            pl.clf()
+            pl.errorbar(x, y, yerr, fmt='k.')
+            pl.savefig('GP_injection')
+            print P
+            raw_input('enter')
+
 if __name__ == "__main__":
 
     cadence = 0.02043365
@@ -317,7 +334,7 @@ if __name__ == "__main__":
 #     l = (p_init<1.9)*(p_init>1.8)
 #     KIDs = KIDs[l]
 
-    KIDs = KIDs[51:]
+#     KIDs = KIDs[51:]
     for k, KID in enumerate(KIDs):
 
         print 'star = ', KID
@@ -359,49 +376,56 @@ if __name__ == "__main__":
 
         print 'subsample and truncate'
         x_sub, y_sub, yerr_sub = subs(x, y, yerr, p_init[KID], 500.)
+#         x_sub, y_sub, yerr_sub = subs(x, y, yerr, p_init[KID], 2000.)
 
         theta = [-2., -2., -1.2, 1.]
+#         GP_injections(theta, x_sub, yerr_sub)
+#         raw_input('enter')
 
-#         # generate fake data
-#         K = QP(theta, x, yerr, P)
-#         y = np.random.multivariate_normal(np.zeros(len(x)), K)
-
-        # find range of periods to calculate L over
-        Periods = find_range(p_init[KID], r, s)
-
-        print 'plotting data...'
+        # generate fake data
+        K = QP(theta, x_sub, yerr_sub, p_init[KID])
+        y_sub = np.random.multivariate_normal(np.zeros(len(x_sub)), K)
         pl.clf()
-        pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.', capsize=0, ecolor='.7')
-        xs = np.arange(min(x_sub), max(x_sub), 0.01)
-#         pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
-#                 p_init[KID])[0], color='#339999', linestyle = '-',\
-#                 zorder=1, linewidth='2')
-        pl.title('$\mathrm{True~Period} = %s$' %p_init[KID])
-        pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
+        pl.plot(x_sub, y_sub, 'k.')
+        pl.savefig('GPlc%s'%int(KID))
+        np.savetxt("GPlc%s.txt"%int(KID), np.transpose((x_sub, y_sub, yerr_sub)))
 
-        print 'Find first global max'
-        L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init[KID], \
-                r, s, b, '1')
-
-        np.savetxt('%sml_results1.txt' %int(KID), np.transpose((Periods, L)))
-
-        # find minima either side of peak
-        #FIXME: maybe I should have a bit of leeway either side of the peak?
-        lmin, rmin = find_mins(L)
-#         r = (Periods[lmin-2], Periods[rmin+2])
-        r = (mlp-.2*mlp, mlp+.2*mlp) # don't find minima, just take window
-        Periods = find_range(mlp, r, s)
-
-        print 'zoom in on highest peak'
-        L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init[KID], \
-                r, s, b, '2')
-
-        np.savetxt('%sml_results2.txt' %int(KID), np.transpose((Periods, L)))
-
-        save_results[KID,:] = np.array([KID, mlp[0], r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
-        print 'saving'
-        print save_results
-#         np.savetxt('/Users/angusr/Python/george/inj_results/%sresults.txt'%int(KID), save_results)
+#         # find range of periods to calculate L over
+#         Periods = find_range(p_init[KID], r, s)
+#
+#         print 'plotting data...'
+#         pl.clf()
+#         pl.errorbar(x_sub, y_sub, yerr=yerr_sub, fmt='k.', capsize=0, ecolor='.7')
+#         xs = np.arange(min(x_sub), max(x_sub), 0.01)
+# #         pl.plot(xs, predict(xs, x_sub, y_sub, yerr_sub, theta, \
+# #                 p_init[KID])[0], color='#339999', linestyle = '-',\
+# #                 zorder=1, linewidth='2')
+#         pl.title('$\mathrm{True~Period} = %s$' %p_init[KID])
+#         pl.savefig("/Users/angusr/Python/george/data/%sdata"%int(KID))
+#
+#         print 'Find first global max'
+#         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init[KID], \
+#                 r, s, b, '1')
+#
+#         np.savetxt('%sml_results1.txt' %int(KID), np.transpose((Periods, L)))
+#
+#         # find minima either side of peak
+#         #FIXME: maybe I should have a bit of leeway either side of the peak?
+#         lmin, rmin = find_mins(L)
+# #         r = (Periods[lmin-2], Periods[rmin+2])
+#         r = (mlp-.2*mlp, mlp+.2*mlp) # don't find minima, just take window
+#         Periods = find_range(mlp, r, s)
+#
+#         print 'zoom in on highest peak'
+#         L, mlp, bm, bp, mlh = global_max(x_sub, y_sub, yerr_sub, theta, Periods, p_init[KID], \
+#                 r, s, b, '2')
+#
+#         np.savetxt('%sml_results2.txt' %int(KID), np.transpose((Periods, L)))
+#
+#         save_results[KID,:] = np.array([KID, mlp[0], r[0], r[1], mlh[0], mlh[1], mlh[2], mlh[3]])
+#         print 'saving'
+#         print save_results
+# #         np.savetxt('/Users/angusr/Python/george/inj_results/%sresults.txt'%int(KID), save_results)
 
         import datetime
         print datetime.datetime.now()

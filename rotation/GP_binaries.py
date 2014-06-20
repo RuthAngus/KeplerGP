@@ -9,9 +9,9 @@ import triangle
 
 def lnprior(theta, bm, bp):
     b = 16.
-    if -b<theta[0]<b and -b<theta[1]<b and -b<theta[2]<b\
-            and -b<theta[3]<b and bm<theta[4]<bp and -b<theta[5]<b \
-            and -b<theta[6]<b and -b<theta[7]<b and bm<theta[8]<bp \
+    if -16.<theta[0]<16. and -16.<theta[1]<16. and -16.<theta[2]<16.\
+            and -16.<theta[3]<16. and bm<theta[4]<bp and -16.<theta[5]<16.\
+            and -16.<theta[6]<16. and -16.<theta[7]<16. and bm<theta[8]<bp \
             and theta[4]>theta[8]:
         return 0.0
     return -np.inf

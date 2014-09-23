@@ -4,7 +4,7 @@ import george
 from george.kernels import ExpSine2Kernel, ExpSquaredKernel, WhiteKernel
 from scipy.optimize import minimize, fmin
 
-t = 8000
+t = 100
 data = np.genfromtxt('/Users/angusr/angusr/data/Wasp/1SWASPJ233549.28+002643.8_J233549_300_ORFG_TAMUZ.lc', skip_header=110).T[:,:t]
 
 x = data[0]
@@ -32,22 +32,36 @@ xs = np.linspace(min(x), max(x), 100)
 
 periods = np.linspace(3., 30, 20)
 L = np.empty_like(periods)
-for p in periods:
+thetas = np.zeros((len(theta), len(periods)))
+
+for i, p in enumerate(periods):
 
     k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], p)
     k += WhiteKernel(theta[3])
     gp = george.GP(k)
 
     result = gp.optimize(x, y, yerr, dims=[0,1,2,3])
-    print 'Period = ', p, result
+
+    thetas[:,i] = result[0]
+
+    print result[0]
+    L[i] = neglnlike(result[0], x, y, yerr, p)
+
+    print 'Period = ', p, 'likelihood = ', L[i]
+    raw_input('enter')
 
 plt.clf()
 plt.plot(periods, L)
 plt.savefig('Wasp_likes')
 
 ml = max(L)
-mp = periods[L==ml]
-ys = predict(theta, xs, x, y, yerr, mp)
+l = L==ml
+mp = periods[l]
+mtheta = thetas[:,l]
+print mtheta
+raw_input('enter')
+
+ys = predict(mtheta, xs, x, y, yerr, mp)
 plt.clf()
 plt.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0)
 plt.plot(xs, ys[0], 'r')

@@ -25,15 +25,15 @@ def lnlike(theta, x, y, yerr):
     return gp.lnlikelihood(y, quiet=True)
 
 def lnprior(theta):
-    if -10 < theta[0] < 10 and -10 < theta[1] < 10 and -10 < theta[2] < 10 \
-            and -10 < theta[3] < 10 and -10 < theta[4] < 10:
+    if -16 < theta[0] < 16 and -16 < theta[1] < 16 and -16 < theta[2] < 16 \
+            and -16 < theta[3] < 16 and -16 < theta[4] < 16:
                 return 0.
     return -np.inf
 
 def lnprob(theta, x, y, yerr):
     return lnprior(theta) + lnlike(theta, x, y, yerr)
 
-def MCMC(theta, x, y, yerr, fname, burn_in, nsteps):
+def MCMC(theta, x, y, yerr, fname, burn_in, nsteps, nruns):
 
     # calculate initial likelihood and plot initial hparams
     xs = np.linspace(min(x), max(x), 1000)
@@ -41,10 +41,12 @@ def MCMC(theta, x, y, yerr, fname, burn_in, nsteps):
     k += WhiteKernel(theta[3])
     gp = george.GP(k)
     print 'initial lnlike = ', lnlike(theta, x, y, yerr)
-    ys = predict(theta, xs, x, y, yerr)
+    mu, cov = predict(theta, xs, x, y, yerr)
     plt.clf()
     plt.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0)
-    plt.plot(xs, ys[0], 'r')
+    plt.plot(xs, mu, 'r')
+    std = np.sqrt(np.diag(cov))
+#     plt.fill_between(mu-std, mu+std, color='r', alpha='.5')
     plt.savefig('%s_init' % fname)
 
     # setup sampler
@@ -53,20 +55,28 @@ def MCMC(theta, x, y, yerr, fname, burn_in, nsteps):
     args = [x, y, yerr]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=args)
 
-    print("Burn-in")
+    print("Burning in...")
     p0, lp, state = sampler.run_mcmc(p0, burn_in)
     sampler.reset()
 
-    print("Production run")
-    p0, lp, state = sampler.run_mcmc(p0, nsteps)
+    for i in range(nruns):
 
-    # results
-    samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
-    mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
-                      zip(*np.percentile(samples, [16, 50, 84], axis=0)))
-    mres = np.array(mcmc_result)[:, 0]
-    print 'mcmc_result = ', mres
-    np.savetxt("parameters_%s.txt" % fname, np.array(mcmc_result))
+        print 'Running... ', i
+        p0, lp, state = sampler.run_mcmc(p0, nsteps)
+
+        # results
+        samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+        mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+                          zip(*np.percentile(samples, [16, 50, 84], axis=0)))
+        mres = np.array(mcmc_result)[:, 0]
+        print 'mcmc_result = ', mres
+        np.savetxt("parameters_%s.txt" % fname, np.array(mcmc_result))
+
+        print "saving samples"
+        f = h5py.File("samples%s" % fname, "w")
+        data = f.create_dataset("samples", np.shape(sampler.chain))
+        data[:,:] = np.array(sampler.chain)
+        f.close()
 
     # make triangle plot
     fig_labels = ["$A$", "$l1$", "$l2$", "$wn$", "$P$"]
@@ -74,18 +84,11 @@ def MCMC(theta, x, y, yerr, fname, burn_in, nsteps):
     fig.savefig("triangle_%s.png" % fname)
 
     # plot result
-    ys = predict(mres, xs, x, y, yerr)
+    mu, cov = predict(mres, xs, x, y, yerr)
     plt.clf()
     plt.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0)
-    plt.plot(xs, ys[0], 'r')
+    plt.plot(xs, mu, 'r')
     plt.savefig('%s_final' % fname)
-
-    print "saving samples"
-    f = h5py.File("samples%s" % fname, "w")
-    data = f.create_dataset("samples", np.shape(sampler.chain))
-    data[:,:] = np.array(sampler.chain)
-    f.close()
-
 
 if __name__ == "__main__":
 
@@ -120,11 +123,11 @@ if __name__ == "__main__":
     plt.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='.8')
     plt.errorbar(b_x, b_y, yerr=b_yerr, fmt='r.', capsize=0, ecolor='r')
     plt.savefig('%s_data' % fname)
-    raw_input('enter')
 
     # initial guess
-    theta = np.log([1.**2, .5 ** 2, 100., 0.05, 16.])
+    theta = np.log([1.**2, .5 ** 2, 100., 0.05, 16.]) # Wasp init
+    theta = np.log([1.**2, 2. ** 2, 100., 0.05, 16.]) # MOST init
 
     # Run MCMC
-    burn_in, nsteps = 100, 500
-    MCMC(theta, b_x, b_y, b_yerr, fname, burn_in, nsteps)
+    burn_in, nsteps, nruns = 1000, 1000, 10
+    MCMC(theta, b_x, b_y, b_yerr, fname, burn_in, nsteps, nruns)

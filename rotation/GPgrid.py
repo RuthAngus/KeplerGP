@@ -20,7 +20,7 @@ ocols = ['#FF9933','#66CCCC' , '#FF33CC', '#3399FF', '#CC0066',
 '#99CC99', '#9933FF', '#CC0000', '#99CC00']
 
 # def grid(results, x, y, yerr, periods):
-def grid(theta, x, y, yerr, periods, lhf):
+def grid(theta, x, y, yerr, periods, lhf, fname):
     L = np.zeros_like(periods)
     results = np.zeros((len(theta), len(L)))
     for i, p in enumerate(periods):
@@ -83,6 +83,7 @@ if __name__ == "__main__":
     y -= np.median(y)  # subtract the median
     x -= x[0]  # zero time
 
+    # select least noisy region
     m = (x > 16.) * (x < 40.)
     x = x[m]
     y = y[m]
@@ -90,15 +91,6 @@ if __name__ == "__main__":
 
     # bin data per day
     b_x, b_y, b_yerr = bin_data(x, y, yerr, 0, 50, .5)
-
-    # plot data
-    plt.clf()
-    plt.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='.8')
-    plt.errorbar(b_x, b_y, yerr=b_yerr, fmt='r.', capsize=0, ecolor='r')
-    plt.savefig('%s_data' % fname)
-
-    print np.var(b_y)
-    print np.log(np.var(b_y))
 
     # initial guess
     # theta = np.log([1.**2, .5 ** 2, 100., 0.05, 16.]) # Wasp init
@@ -110,4 +102,4 @@ if __name__ == "__main__":
 #     periods = np.linspace(10, 20, 20)  # round 3
     periods = np.linspace(12, 17, 20)  # round 4
 
-    L, results = grid(theta, b_x, b_y, b_yerr, periods, neglnlike)
+    L, results = grid(theta, b_x, b_y, b_yerr, periods, neglnlike, fname)  # MOST_result.png

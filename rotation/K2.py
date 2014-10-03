@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from colors import plot_colors
-from rotation import before_and_after
-from GPgrid import grid, bin_data, neglnlike
+from rotation import before_and_after, neglnlike
+from GPgrid import grid, bin_data
 import george
 from george.kernels import ExpSine2Kernel, ExpSquaredKernel, WhiteKernel
 
@@ -75,5 +75,4 @@ before_and_after(theta, x, y, yerr, p, p, fname)  # all_baa.png
 
 # grid over periods
 periods = np.linspace(12, 17, 20)
-# L, results = grid(theta, x, y, yerr, periods, neglnlike)
-print neglnlike(theta, x, y, yerr, p)
+L, results = grid(theta, x, y, yerr, periods, neglnlike, fname)

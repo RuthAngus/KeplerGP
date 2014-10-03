@@ -25,8 +25,10 @@ def lnlike(theta, x, y, yerr):
     return gp.lnlikelihood(y, quiet=True)
 
 def lnprior(theta):
-    if -16 < theta[0] < 16 and -16 < theta[1] < 16 and -16 < theta[2] < 16 \
-            and -16 < theta[3] < 16 and -16 < theta[4] < 16:
+#     if -20 < theta[0] < 16 and 0 < theta[1] < 16 and -16 < theta[2] < 16 \
+#             and -20 < theta[3] < 20 and 0 < theta[4] < 16:
+    if -20 < theta[0] < 16 and 0 < theta[1] < 16 and 0 < theta[2] < 20 \
+            and -20 < theta[3] < 20 and 0 < theta[4] < 16:
                 return 0.
     return -np.inf
 
@@ -69,7 +71,7 @@ def MCMC(theta, x, y, yerr, fname, burn_in, nsteps, nruns):
         mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                           zip(*np.percentile(samples, [16, 50, 84], axis=0)))
         mres = np.array(mcmc_result)[:, 0]
-        print 'mcmc_result = ', mres
+        print 'mcmc_result = ', np.exp(mres)
         np.savetxt("parameters_%s.txt" % fname, np.array(mcmc_result))
 
         print "saving samples"
@@ -107,8 +109,13 @@ if __name__ == "__main__":
     y -= np.median(y)  # subtract the median
     x -= x[0]  # zero time
 
+    m = (x > 16.) * (x < 40.)
+    x = x[m]
+    y = y[m]
+    yerr = yerr[m]
+
     # bin data per day
-    bins = range(50)
+    bins = np.arange(0, 50, 0.5)
     inds = np.digitize(x, bins, right=False)
     b_x, b_y, b_yerr = np.zeros(max(inds)), np.zeros(max(inds)), np.zeros(max(inds))
     for i in range(len(b_x)):
@@ -124,10 +131,14 @@ if __name__ == "__main__":
     plt.errorbar(b_x, b_y, yerr=b_yerr, fmt='r.', capsize=0, ecolor='r')
     plt.savefig('%s_data' % fname)
 
+    print np.var(b_y)
+    print np.log(np.var(b_y))
+
     # initial guess
-    theta = np.log([1.**2, .5 ** 2, 100., 0.05, 16.]) # Wasp init
-    theta = np.log([1.**2, 2. ** 2, 100., 0.05, 16.]) # MOST init
+    # theta = np.log([1.**2, .5 ** 2, 100., 0.05, 16.]) # Wasp init
+#     theta = np.log([1e-6, 20. ** 2, 10, 1e-7, 16]) # MOST init
+    theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 16]) # MOST init
 
     # Run MCMC
-    burn_in, nsteps, nruns = 1000, 1000, 10
+    burn_in, nsteps, nruns = 1000, 2000, 10
     MCMC(theta, b_x, b_y, b_yerr, fname, burn_in, nsteps, nruns)

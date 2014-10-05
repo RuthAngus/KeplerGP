@@ -8,14 +8,14 @@ import triangle
 import h5py
 
 def predict(theta, xs, x, y, yerr):
-    theta = np.exp(theta)
+#     theta = np.exp(theta)
     k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], theta[4])
     gp = george.GP(k)
     gp.compute(x, np.sqrt(theta[3]+yerr**2))
     return gp.predict(y, xs)
 
 def lnlike(theta, x, y, yerr):
-    theta = np.exp(theta)
+#     theta = np.exp(theta)
     k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], theta[4])
     gp = george.GP(k)
     try:
@@ -24,11 +24,10 @@ def lnlike(theta, x, y, yerr):
         return 10e25
     return gp.lnlikelihood(y, quiet=True)
 
+# theta = [-12.619, 6.153, -0.65858, -15.471, 14.1] # best init
 def lnprior(theta):
-#     if -20 < theta[0] < 16 and 0 < theta[1] < 16 and -16 < theta[2] < 16 \
-#             and -20 < theta[3] < 20 and 0 < theta[4] < 16:
-    if -20 < theta[0] < 16 and 0 < theta[1] < 16 and 0 < theta[2] < 20 \
-            and -20 < theta[3] < 20 and 0 < theta[4] < 16:
+    if -20 < theta[0] < 16 and 0 < theta[1] < 10 and -10 < theta[2] < 10 \
+            and -20 < theta[3] < 20 and 10 < theta[4] < 18:
                 return 0.
     return -np.inf
 
@@ -137,7 +136,8 @@ if __name__ == "__main__":
     # initial guess
     # theta = np.log([1.**2, .5 ** 2, 100., 0.05, 16.]) # Wasp init
 #     theta = np.log([1e-6, 20. ** 2, 10, 1e-7, 16]) # MOST init
-    theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 16]) # MOST init
+#     theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 16]) # MOST init
+    theta = [-12.619, 6.153, -0.65858, -15.471, 14.1] # best init
 
     # Run MCMC
     burn_in, nsteps, nruns = 1000, 2000, 10

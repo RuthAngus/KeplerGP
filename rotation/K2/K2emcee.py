@@ -12,11 +12,11 @@ from colors import plot_colors
 ocols = plot_colors()
 
 def lnprior(theta):
+#     and -20 < theta[6] < 20 and np.log(12) < theta[7] < np.log(15):
     if -20 < theta[0] < 16 and 0 < theta[1] < 10 and -10 < theta[2] < 10 \
     and -20 < theta[3] < 20 and -20 < theta[4] < 20 and -20 < theta[5] < 20 \
     and -20 < theta[6] < 20 and np.log(20) < theta[7] < np.log(50):
-#     and -20 < theta[6] < 20 and np.log(12) < theta[7] < np.log(15):
-                return 0.
+        return 0.
     return -np.inf
 
 def lnprob(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, yerr4):
@@ -125,8 +125,10 @@ if __name__ == "__main__":
         x4, y4, yerr4 = bin_data(x4, y4, yerr4, min(x4), max(x4), intrvl)
 
     # initial guess
+#     theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 1e-7, \
+#                    1e-7, 1e-7, 13.5])
     theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 1e-7, \
-                   1e-7, 1e-7, 13.5])
+                   1e-7, 1e-7, 25.])
 
     # Run MCMC
     burn_in, nsteps, nruns = 1000, 5000, 5

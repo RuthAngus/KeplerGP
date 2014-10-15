@@ -3,11 +3,11 @@ import matplotlib.pyplot as pl
 import triangle
 import h5py
 
-def open_samples(fname, ndim):
+def open_samples(fname):
     with h5py.File("samples%s" %fname, "r") as f:
         samples = f["samples"][:, 50:, :]
     nwalkers, n, ndim = samples.shape
-    return samples, samples.reshape((-1, ndim))
+    return samples, samples.reshape((-1, ndim)), ndim
 
 def result(fname, flatchain):
     mcmc_result = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
@@ -16,8 +16,10 @@ def result(fname, flatchain):
     return mcmc_result
 
 def triangle_plot(fname, mcmc_result, flatchain, fig_labels):
+    print 'yes'
     mres = np.array(mcmc_result)[:, 0]
     print 'mcmc_result = ', mres
+    print len(mres), len(fig_labels)
     fig = triangle.corner(flatchain, truths=mres, labels=fig_labels)
     fig.savefig("triangle_%s.png" % fname)
 
@@ -29,11 +31,11 @@ def trace_plot(fname, samples, ndim):
         pl.savefig("%s%s.png" %(i, fname))
 
 if __name__ == "__main__":
-    fname = 'MOST'
-    fig_labels = ["$A$", "$l1$", "$l2$", "$wn$", "$P$"]
-    ndim = len(fig_labels)
+    fname = 'all'
+    fig_labels = ["$A$", "$l1$", "$l2$", "$wn1$", "$wn2$", "$wn3$", "$wn4$, ""$P$"]
 
-    samples, flatchain = open_samples(fname, ndim)
+    samples, flatchain, ndim = open_samples(fname)
+    print 'yes'
     mcmc_result = result(fname, flatchain)
 
     triangle_plot(fname, mcmc_result, flatchain, fig_labels)

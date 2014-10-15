@@ -32,7 +32,12 @@ def trace_plot(fname, samples, ndim):
 if __name__ == "__main__":
 
     fname = sys.argv[1]
-    fig_labels = ["$A$", "$l1$", "$l2$", "$wn1$", "$wn2$", "$wn3$", "$wn4$", "$P$", "x"]
+
+    fig_labels = ["$A$", "$l1$", "$l2$", "$wn1$", "$wn2$", "$wn3$", "$wn4$", "$P$"]
+    if fname == 'wasp':
+        fig_labels = ["$A$", "$l1$", "$l2$", "$wn1$", "$wn2$", "$wn3$",
+                      "$wn4$", "$wn5$", "$P$"]
+
     samples, flatchain, ndim = open_samples(fname)
     mcmc_result = result(fname, flatchain)
     triangle_plot(fname, mcmc_result, flatchain, fig_labels)

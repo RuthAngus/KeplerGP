@@ -5,6 +5,94 @@ from george.kernels import ExpSine2Kernel, ExpSquaredKernel, WhiteKernel
 from scipy.optimize import minimize, fmin
 from colors import plot_colors
 
+def multilnlike(theta, x1, x2, x3, x4, y1, y2, y3, y4,
+                yerr1, yerr2, yerr3, yerr4, p):
+    lnlike = []
+    theta = np.exp(theta)
+    k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], p)
+    gp = george.GP(k)
+    try:
+        gp.compute(x1, np.sqrt(theta[3]+yerr1**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(-gp.lnlikelihood(y1, quiet=True))
+    try:
+        gp.compute(x2, np.sqrt(theta[4]+yerr2**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(-gp.lnlikelihood(y2, quiet=True))
+    try:
+        gp.compute(x3, np.sqrt(theta[5]+yerr3**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(-gp.lnlikelihood(y3, quiet=True))
+    try:
+        gp.compute(x4, np.sqrt(theta[6]+yerr4**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(-gp.lnlikelihood(y4, quiet=True))
+    return np.logaddexp.reduce(np.array(lnlike), axis=0)
+
+def multilnlike_emcee(theta, x1, x2, x3, x4, y1, y2, y3, y4,
+                yerr1, yerr2, yerr3, yerr4):
+    lnlike = []
+    theta = np.exp(theta)
+    k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], theta[7])
+    gp = george.GP(k)
+    try:
+        gp.compute(x1, np.sqrt(theta[3]+yerr1**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y1, quiet=True))
+    try:
+        gp.compute(x2, np.sqrt(theta[4]+yerr2**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y2, quiet=True))
+    try:
+        gp.compute(x3, np.sqrt(theta[5]+yerr3**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y3, quiet=True))
+    try:
+        gp.compute(x4, np.sqrt(theta[6]+yerr4**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y4, quiet=True))
+    return np.logaddexp.reduce(np.array(lnlike), axis=0)
+
+def multilnlike_emcee_wasp(theta, x1, x2, x3, x4, x5, y1, y2, y3, y4, y5,
+                yerr1, yerr2, yerr3, yerr4, yerr5):
+    lnlike = []
+    theta = np.exp(theta)
+    k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], theta[7])
+    gp = george.GP(k)
+    try:
+        gp.compute(x1, np.sqrt(theta[3]+yerr1**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y1, quiet=True))
+    try:
+        gp.compute(x2, np.sqrt(theta[4]+yerr2**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y2, quiet=True))
+    try:
+        gp.compute(x3, np.sqrt(theta[5]+yerr3**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y3, quiet=True))
+    try:
+        gp.compute(x4, np.sqrt(theta[6]+yerr4**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    try:
+        gp.compute(x5, np.sqrt(theta[7]+yerr5**2))
+    except (ValueError, np.linalg.LinAlgError):
+        return 10e25
+    lnlike.append(gp.lnlikelihood(y5, quiet=True))
+    return np.logaddexp.reduce(np.array(lnlike), axis=0)
+
 def predict(theta, xs, x, y, yerr, p):
     theta = np.exp(theta)
     k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], p)

@@ -6,7 +6,7 @@ from scipy.optimize import minimize, fmin
 import emcee
 import triangle
 import h5py
-from rotation import predict, neglnlike
+from rotation import predict, neglnlike, multilnlike
 
 plotpar = {'axes.labelsize': 15,
            'text.fontsize': 20,
@@ -24,7 +24,7 @@ def grid(theta, x, y, yerr, periods, lhf, fname):
     L = np.zeros_like(periods)
     results = np.zeros((len(theta), len(L)))
     for i, p in enumerate(periods):
-        print 'minimizing'
+        print 'minimising'
         result = fmin(lhf, theta, args=(x, y, yerr, p))
         L[i] = -lhf(result, x, y, yerr, p)
         results[:, i] = result
@@ -43,7 +43,7 @@ def grid(theta, x, y, yerr, periods, lhf, fname):
     plt.savefig('%s_likelihood' % fname)
 
     plt.subplot(2,1,2)
-    plt.errorbar(b_x, b_y, yerr=b_yerr, fmt='k.', capsize=0, ecolor='.8')
+    plt.errorbar(x, y, yerr=yerr, fmt='k.', capsize=0, ecolor='.8')
     xs = np.linspace(min(x), max(x), 100)
     mu, cov = predict(new_theta, xs, x, y, yerr, period)
     plt.plot(xs, mu, color=ocols[0], label="$\mathrm{Period}=%s$" % period)
@@ -53,7 +53,30 @@ def grid(theta, x, y, yerr, periods, lhf, fname):
     plt.legend()
     plt.savefig('%s_result' % fname)
 
-    return L, results
+    return L, results, L[l][0], new_theta, period
+
+def K2grid(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1,
+           yerr2, yerr3, yerr4, periods, lhf, fname):
+    L = np.zeros_like(periods)
+    results = np.zeros((len(theta), len(L)))
+    for i, p in enumerate(periods):
+        print 'minimising', i, p
+        result = fmin(lhf, theta, args=(x1, x2, x3, x4, y1, y2,
+                      y3, y4, yerr1, yerr2, yerr3, yerr4, p))
+        L[i] = -lhf(result, x1, x2, x3, x4, y1, y2, y3,
+                    y4, yerr1, yerr2, yerr3, yerr4, p)
+        results[:, i] = result
+    l = L==max(L)
+    new_theta = results[:, l].T[0]
+    period = periods[l][0]
+    print 'max likelihood = ', L[l][0], 'period = ', period
+    print 'best params: ', new_theta
+    plt.clf()
+    plt.plot(periods, L, color=ocols[1])
+    plt.xlabel('$\mathrm{Period~(days)}$')
+    plt.ylabel('$\mathrm{Log~likelihood}$')
+    plt.savefig('%s_likelihood' % fname)
+    return L, results, L[l][0], new_theta, period
 
 def bin_data(x, y, yerr, minb, maxb, increment):
     bins = np.arange(minb, maxb, increment)

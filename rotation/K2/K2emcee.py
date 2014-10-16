@@ -6,7 +6,7 @@ from scipy.optimize import minimize, fmin
 import emcee
 import triangle
 import h5py
-from rotation import multilnlike_emcee, predict
+from rotation import multilnlike_emcee_comb, predict
 from GPgrid import bin_data
 from colors import plot_colors
 ocols = plot_colors()
@@ -20,7 +20,7 @@ def lnprior(theta):
     return -np.inf
 
 def lnprob(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, yerr4):
-    return lnprior(theta) + multilnlike_emcee(theta, x1, x2, x3, x4, y1, y2, \
+    return lnprior(theta) + multilnlike_emcee_comb(theta, x1, x2, x3, x4, y1, y2, \
                                         y3, y4, yerr1, yerr2, yerr3, yerr4)
 
 def MCMC(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, \
@@ -94,7 +94,7 @@ def MCMC(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, \
 
 if __name__ == "__main__":
 
-    fname = 'all'
+    fname = 'all2'
 
     # load MOST data
     xM, yM, yerrM = \

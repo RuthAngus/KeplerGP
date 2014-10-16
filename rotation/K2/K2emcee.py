@@ -19,17 +19,15 @@ def lnprior(theta):
         return 0.
     return -np.inf
 
-def lnprob(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, yerr4):
-    return lnprior(theta) + multilnlike_emcee_comb(theta, x1, x2, x3, x4, y1, y2, \
-                                        y3, y4, yerr1, yerr2, yerr3, yerr4)
+def lnprob(theta, x, y, yerr):
+    return lnprior(theta) + multilnlike_emcee_comb(theta, x, y, yerr)
 
-def MCMC(theta, x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, \
-         yerr4, fname, burn_in, nsteps, nruns):
+def MCMC(theta, x, y, yerr, fname, burn_in, nsteps, nruns):
 
     # setup sampler
     nwalkers, ndim = 32, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
-    args = [x1, x2, x3, x4, y1, y2, y3, y4, yerr1, yerr2, yerr3, yerr4]
+    args = [x, y, yerr]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=args)
 
     print("Burning in...")
@@ -124,14 +122,9 @@ if __name__ == "__main__":
         x3, y3, yerr3 = bin_data(x3, y3, yerr3, min(x3), max(x3), intrvl)
         x4, y4, yerr4 = bin_data(x4, y4, yerr4, min(x4), max(x4), intrvl)
 
-    print len(x1), len(x2), len(x3), len(x4)
     x = np.concatenate((x1, x2, x3, x4))
-    print x2[0], x[122]
-    print x3[0], x[122+183]
-    print x4[0], x[122+183+28]
     y = np.concatenate((y1, y2, y3, y4))
     yerr = np.concatenate((yerr1, yerr2, yerr3, yerr4))
-    raw_input('neter')
 
     # initial guess
 #     theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 1e-7, \

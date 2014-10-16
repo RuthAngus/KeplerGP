@@ -124,6 +124,15 @@ if __name__ == "__main__":
         x3, y3, yerr3 = bin_data(x3, y3, yerr3, min(x3), max(x3), intrvl)
         x4, y4, yerr4 = bin_data(x4, y4, yerr4, min(x4), max(x4), intrvl)
 
+    print len(x1), len(x2), len(x3), len(x4)
+    x = np.concatenate((x1, x2, x3, x4))
+    print x2[0], x[122]
+    print x3[0], x[122+183]
+    print x4[0], x[122+183+28]
+    y = np.concatenate((y1, y2, y3, y4))
+    yerr = np.concatenate((yerr1, yerr2, yerr3, yerr4))
+    raw_input('neter')
+
     # initial guess
 #     theta = np.log([1e-6, 20. ** 2, 20, 1e-7, 1e-7, \
 #                    1e-7, 1e-7, 13.5])
@@ -132,6 +141,5 @@ if __name__ == "__main__":
 
     # Run MCMC
     burn_in, nsteps, nruns = 1000, 5000, 5
-    MCMC(theta, x1, x2, x3, x4, y1, y2, y3, y4,
-         yerr1, yerr2, yerr3, yerr4, fname, burn_in,
+    MCMC(theta, x, y, yerr, fname, burn_in,
          nsteps, nruns)

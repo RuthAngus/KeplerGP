@@ -33,13 +33,12 @@ def multilnlike(theta, x1, x2, x3, x4, y1, y2, y3, y4,
     lnlike.append(-gp.lnlikelihood(y4, quiet=True))
     return np.logaddexp.reduce(np.array(lnlike), axis=0)
 
-def multilnlike_emcee_comb(theta, x1, x2, x3, x4, y1, y2, y3, y4,
-                yerr1, yerr2, yerr3, yerr4):
+def multilnlike_emcee_comb(theta, x, y, yerr):
 
-    x = np.concatenate((x1, x2, x3, x4))
-    y = np.concatenate((y1, y2, y3, y4))
-    yerr = np.concatenate((np.sqrt(theta[3]+yerr1**2), np.sqrt(theta[4]+yerr2**2),
-                           np.sqrt(theta[5]+yerr3**2), np.sqrt(theta[6]+yerr4**2)))
+    yerr[:121] = np.sqrt(theta[3]+yerr[:121]**2)
+    yerr[122:304] = np.sqrt(theta[4]+yerr[122:304]**2)
+    yerr[305:332] = np.sqrt(theta[5]+yerr[305:332]**2)
+    yerr[333:] = np.sqrt(theta[6]+yerr[333:]**2)
 
     theta = np.exp(theta)
     k = theta[0] * ExpSquaredKernel(theta[1]) * ExpSine2Kernel(theta[2], theta[7])

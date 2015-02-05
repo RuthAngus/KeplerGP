@@ -1,8 +1,6 @@
 import numpy as np
 import pyfits
 import matplotlib.pyplot as pl
-
-
 from fixed_p_like import lnlike, predict, QP, neglnlike
 import emcee
 import triangle
@@ -14,15 +12,10 @@ from scipy.optimize import fmin
 from scipy.signal import periodogram, find_peaks_cwt, argrelextrema
 import scipy as sp
 import pylab as pb
-
-ocols = ['#FF9933','#66CCCC' , '#FF33CC', '#3399FF', '#CC0066', '#99CC99', '#9933FF', '#CC0000']
-plotpar = {'axes.labelsize': 20,
-           'text.fontsize': 20,
-           'legend.fontsize': 15,
-           'xtick.labelsize': 18,
-           'ytick.labelsize': 18,
-           'text.usetex': True}
-pl.rcParams.update(plotpar)
+from params import plot_params
+reb = plot_params()
+from colours import plot_colours
+ocols = plot_colours()
 
 # flat priors (quasi-periodic)
 def lnprior(theta, bm, bp):
@@ -68,7 +61,8 @@ def MCMC(theta, x, y, yerr, bm, bp):
     # Sample the posterior probability for m.
     nwalkers, ndim = 64, len(theta)
     p0 = [theta+1e-4*np.random.rand(ndim) for i in range(nwalkers)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr, bm, bp))
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args = (x, y, yerr,
+                                                                    bm, bp))
     bi, pr = 200, 2000
     print("Burn-in")
     p0, lp, state = sampler.run_mcmc(p0, bi)
@@ -100,7 +94,8 @@ def MCMC(theta, x, y, yerr, bm, bp):
 
         print("Making triangle plot")
         fig_labels = ["$A$", "$l_2$", "$l_1$", "$s$", "$P$"]
-        fig = triangle.corner(sampler.flatchain, truths=theta, labels=fig_labels[:len(theta)])
+        fig = triangle.corner(sampler.flatchain, truths=theta,
+                              labels=fig_labels[:len(theta)])
         fig.savefig("triangle.png")
 
     # Flatten chain

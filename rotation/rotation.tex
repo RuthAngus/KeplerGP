@@ -13,21 +13,45 @@
 
 \begin{abstract}
 
-With space-based missions like Kepler it has become possible to measure stellar rotation periods directly from light curves.
-Active regions on the surfaces of stars rotate in and out of view, producing periodic variations detectable in Kepler data.
-Unfortunately, none of the commonly used methods for measuring periodic signals are ideally suited to photometric stellar rotation periods.
-% Of the most commonly used methods for measuring photometric stellar rotation periods, none is ideally suited to the typically quasi-periodic, non-sinusoidal rotation signals.
-% The most commonly used methods for measuring photometric stellar rotation periods are not ideally suited to the problem.
-Periodogram and wavelet based methods are not suited to quasi-periodic, non-sinusoidal signals and often detect harmonics or sub-harmonics of the `true' rotation period.
-The autocorrelation function (ACF) method (McQuillan et al, 2012) \emph{is} able to distinguish a true period from its harmonics in most cases and is better adapted to quasi-periodic, non-sinusiodal signals.
-% However, in general it requires heuristics --- hand-tuned, non-motivated-by-science parameters, to determine the `reliability' of a rotation period measurement.
-General practise within the field is to use the ACF method, or some combination of ACF, periodogram and wavelets, however one major drawback to all of the methods listed above is that uncertainties on rotation periods are difficult to quantify.
-In an ideal world, physically-motivated models would be used to measure rotation periods.
-Unfortunately, the physics driving the production of variability in stellar light curves is poorly understood and parameters such as spot lifetime and differential rotation (shear) are highly degenerate.
-In the absence of a well-motivated physical model, we opt to use a highly flexible semi-parametric model: a Gaussian process (GP) with a quasi-periodic covariance function.
-% The parameters of a GP do not apply to the light curve itself, but to the properties of its covariance structure.
-% It is semi-parametric because its parameters do not apply to the light curve itself, but to the properties of the covariance structure of the light curve.
-This GP model should be well suited to quasi-periodic, non-sinusoidal signals, it will be capable of  modelling noise and physical signals simultaneously and will provide rotation period measurements with realistic uncertainties.
+With space-based missions like Kepler it has become possible to measure
+stellar rotation periods directly from light curves.
+Active regions on the surfaces of stars rotate in and out of view, producing
+periodic variations detectable in Kepler data.
+Unfortunately, none of the commonly used methods for measuring periodic
+signals are ideally suited to photometric stellar rotation periods.
+% Of the most commonly used methods for measuring photometric stellar rotation
+% periods, none is ideally suited to the typically quasi-periodic,
+% non-sinusoidal rotation signals.
+% The most commonly used methods for measuring photometric stellar rotation
+% periods are not ideally suited to the problem.
+Periodogram and wavelet based methods are not suited to quasi-periodic,
+non-sinusoidal signals and often detect harmonics or sub-harmonics of the
+`true' rotation period.
+The autocorrelation function (ACF) method (McQuillan et al, 2012) \emph{is}
+able to distinguish a true period from its harmonics in most cases and is
+better adapted to quasi-periodic, non-sinusiodal signals.
+% However, in general it requires heuristics --- hand-tuned,
+% non-motivated-by-science parameters, to determine the `reliability' of a
+% rotation period measurement.
+General practise within the field is to use the ACF method, or some
+combination of ACF, periodogram and wavelets, however one major drawback to
+all of the methods listed above is that uncertainties on rotation periods are
+difficult to quantify.
+In an ideal world, physically-motivated models would be used to measure
+rotation periods.
+Unfortunately, the physics driving the production of variability in stellar
+light curves is poorly understood and parameters such as spot lifetime and
+differential rotation (shear) are highly degenerate.
+In the absence of a well-motivated physical model, we opt to use a highly
+flexible semi-parametric model: a Gaussian process (GP) with a quasi-periodic
+covariance function.
+% The parameters of a GP do not apply to the light curve itself, but to the
+% properties of its covariance structure.
+% It is semi-parametric because its parameters do not apply to the light curve
+% itself, but to the properties of the covariance structure of the light curve.
+This GP model should be well suited to quasi-periodic, non-sinusoidal signals,
+it will be capable of  modelling noise and physical signals simultaneously and
+will provide rotation period measurements with realistic uncertainties.
 
 
 \end{abstract}
